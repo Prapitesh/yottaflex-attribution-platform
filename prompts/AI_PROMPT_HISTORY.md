@@ -39,7 +39,7 @@ Candidate provided the official YottaFlex Candidate Project FAQ and Candidate Pr
 
 **AI assistance disclosure update:** ChatGPT helped add Playwright browser tests, wire sidebar navigation to dashboard sections, diagnose and fix a mobile horizontal overflow issue, split the frontend bundle into vendor chunks, and update validation documentation. The candidate should personally review and understand these changes and retain any additional prompts from other AI tools or earlier conversations not represented in this file.
 
-**Work performed:** 16 mocked-API browser tests passed across desktop/mobile Chromium; 2 additional live browser integration tests passed against the local Spring Boot/PostgreSQL instance. The live tests verified real dataset-run retrieval, dashboard data rendering, run filtering and FIRST_TOUCH model switching. Python unit tests (2), starter/full dataset validators (zero errors), and starter/full reproducibility checks (row counts and SHA-256 checksums match) passed.
+**Work performed:** 16 mocked-API browser tests passed across desktop/mobile Chromium; 2 additional live browser integration tests passed against the local Spring Boot/PostgreSQL instance. The live tests verified real dataset-run retrieval, dashboard data rendering, run filtering and FIRST_TOUCH model switching. Python unit tests (5), starter/full dataset validators (zero errors), and starter/full reproducibility checks (row counts and SHA-256 checksums match) passed.
 
 
 ### Additional exact prompts recovered from the earlier YottaFlex project conversation (2026-11-06)
@@ -48,4 +48,10 @@ Candidate provided the official YottaFlex Candidate Project FAQ and Candidate Pr
 "try to follow frontend,backend folder structure and coding standards And select which one fits to you properly, the postgresql"
 "And I have opened my GitHub also. You can complete the balance work."
 
-**Additional work performed:** implemented append-only lifecycle transition events for Campaign, Lead, Opportunity and DatasetRun. Added an allow-list for valid transitions and tests for old/new state metadata, run metadata, invalid terminal reversals and run validation. Backend suite now contains 12 passing tests.
+**Additional work performed:** implemented append-only lifecycle transition events for Campaign, Lead, Opportunity and DatasetRun. Added an allow-list for valid transitions and tests for old/new state metadata, run metadata, invalid terminal reversals and run validation. Backend suite now contains 13 passing tests.
+
+
+### Prompt 8 - complete remaining challenge work before Sunday submission (2026-11-06)
+"i will submit on sunday if everyting is over think like a human complete pending work in coding challenge"
+
+**Additional work performed:** corrected the unverified anonymous session so it has no contact association; upgraded the Python export validator to check anomaly target semantics, identity-link rejection, contact-matched 180-day attribution eligibility, normalized credits, chronological split consistency, manifest row counts and SHA-256 checksums; added regression tests; corrected mixed-currency ROI aggregation so any mismatched cost row quarantines campaign ROI; added a DashboardService regression test; and added GitHub Actions CI for Python starter/full validation and reproducibility, Maven verification, frontend build and Chromium desktop/mobile tests.

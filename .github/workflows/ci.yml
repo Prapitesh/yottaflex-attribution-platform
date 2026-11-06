@@ -1,0 +1,78 @@
+name: YottaFlex CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate backend, data and frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Run Python unit tests
+        run: python -m unittest discover -s tools/tests -v
+
+      - name: Generate and validate starter dataset
+        run: |
+          python tools/generate_synthetic.py --out data/ci-starter
+          python tools/validate_dataset.py --data data/ci-starter
+
+      - name: Verify starter reproducibility
+        run: python tools/reproducibility_check.py
+
+      - name: Generate and validate challenge-scale dataset
+        run: |
+          python tools/generate_synthetic.py --full --out data/ci-full
+          python tools/validate_dataset.py --data data/ci-full
+
+      - name: Verify challenge-scale reproducibility
+        run: python tools/reproducibility_check.py --full
+
+      - name: Run Java tests
+        working-directory: backend
+        run: mvn --batch-mode --no-transfer-progress clean verify
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Chromium for Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run desktop and mobile browser tests
+        working-directory: frontend
+        run: npm run test:e2e

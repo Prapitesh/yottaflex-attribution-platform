@@ -7,3 +7,4 @@
 5. The initial implementation is an engineering prototype, not a full production ledger.
 6. Starter and full-scale Java/PostgreSQL generation, attribution, quality inspection, and live API checks have been executed. Python starter and full-scale exports, validators, and reproducibility checks have also passed.
 7. Lifecycle audit records capture CREATED events and append-only status transitions for Campaign, Lead, Opportunity and DatasetRun. Delete/restore workflows and transitions for entities without status fields are outside this prototype.
+\n- Campaign-level ROI is unavailable when any cost record for that campaign has a currency mismatch; no partial mixed-currency sum or implicit FX conversion is allowed.\n

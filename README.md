@@ -33,7 +33,7 @@ python tools/generate_synthetic.py --full
 python tools/validate_dataset.py --data data\generated
 python tools/reproducibility_check.py --full
 ```
-Generated files are in `data/generated/` by default. The full scale uses 500 campaigns, 50,000 contacts, 200,000 baseline touchpoints and 10,000 opportunities. A separate labelled post-conversion touchpoint, duplicate order, missing campaign cost, currency mismatch and unverified identity link are included as exception examples. Attribution results and evaluation split labels are derived from the source records. The Python tooling uses only the standard library.
+Generated files are in `data/generated/` by default. The full scale uses 500 campaigns, 50,000 contacts, 200,000 baseline touchpoints and 10,000 opportunities. A separate labelled post-conversion touchpoint, duplicate order, missing campaign cost, currency mismatch and unverified identity link are included as exception examples. Attribution results and evaluation split labels are derived from the source records. The Python tooling uses only the standard library. Each generated dataset includes a SHA256SUMS.txt covering its exports and accompanying evidence files.
 
 ## Run the application
 Requirements: Java 21, Maven 3.9+, Node 20+, PostgreSQL 16+.
@@ -78,10 +78,10 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 ## Data quality policy
 - Duplicate revenue keys are retained in source events for audit, but revenue totals count one unique external revenue key once.
 - Post-conversion touches are excluded.
-- Campaign costs with a currency different from campaign currency are quarantined; no FX rate is assumed.
+- Campaign ROI is quarantined if any cost row has a currency different from the campaign currency; no FX rate is assumed.
 - Missing campaign cost means ROI unavailable, not 0%.
 - An identity association without evidence is flagged and rejected.
-- Quality findings and ground-truth labels are appended per inspection run.
+- Quality findings and ground-truth labels are appended per inspection run. The export validator checks that anomaly labels point to real records and that each record actually exhibits the labelled exception.
 - `ground_truth.csv` is evaluation-only and never used as an input feature.
 
 ## Design and disclosure
@@ -91,20 +91,21 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 - `docs/SOURCE_MANIFEST.md`
 - `prompts/AI_PROMPT_HISTORY.md`
 - `prompts/ASSUMPTIONS.md`
+- `.github/workflows/ci.yml`
 
 ## Verification recorded 2026-11-06
-- Backend: `mvn clean test` and `mvn test` passed; 12 tests, zero failures. Java 21 compilation succeeded.
-- Frontend: npm run build passes without chunk-size warnings. Output is split into a 73.50 kB application chunk, 457.10 kB Recharts chunk, 74.94 kB D3 chunk and 14.84 kB icon chunk (all minified chunks below 500 kB).
+- Backend: Maven clean verify passed; 13 tests, zero failures. Java 21 compilation and executable JAR packaging succeeded.
+- Frontend: clean npm ci installed 138 packages with zero reported vulnerabilities; npm run build passes without chunk-size warnings. Output is split into a 73.50 kB application chunk, 457.10 kB Recharts chunk, 74.94 kB D3 chunk and 14.84 kB icon chunk (all minified chunks below 500 kB).
 - PostgreSQL 18.6 at `localhost:5432`: authenticated connection succeeded; Flyway validated and applied migrations V1–V3; Hibernate initialized with `ddl-auto: validate`.
 - Live Spring Boot API: dashboard summary, dataset-runs, campaigns, attribution results and quality issues endpoints returned HTTP 200. CORS allows `http://localhost:5173`.
 - Frontend dev server: `http://localhost:5173` returned HTTP 200; Vite served `main.tsx`, `App.tsx`, `DashboardPage.tsx` and `services/api.ts` successfully.
 - Java starter run: generated 12 campaigns, 300 contacts, 1,201 touchpoints including the labelled post-conversion example, and 80 opportunities. Attribution calculation produced 846 results; quality inspection identified all five anomaly classes.
-- Python full dataset: 500 campaigns, 50,000 contacts, 200,001 touchpoints (200,000 baseline plus one labelled negative example), 10,000 opportunities, and 15,120 attribution rows. Validator returned zero errors; 13,410 opportunity/model groups reconcile to 1.0. Repeated generation matched row counts and SHA-256 checksums.
+- Python: five unit tests pass. Starter and full datasets validate with zero errors, including FK integrity, all five anomaly semantics, contact-matched attribution inside the 180-day window, normalized credit groups, manifest row counts and SHA-256 checksums. Starter and full fixed-seed regeneration both reproduce identical counts and hashes.
 
 ## Known limitations and submission notes
 - A lint/format enforcement gate is not configured. The frontend has a Playwright browser interaction suite covering desktop and mobile Chromium; it is not a substitute for testing every physical browser/device.
-- Backend automated coverage currently contains 12 Java unit tests plus the documented PostgreSQL-backed runtime checks. Additional repository-level integration tests are recommended.
-- Entity audit records append-only CREATED events and validated STATUS_CHANGED transitions for Campaign (PLANNED ? ACTIVE ? COMPLETED), Lead (NEW ? QUALIFIED ? CONVERTED), Opportunity (OPEN ? WON), and DatasetRun (GENERATED ? VALIDATED). Entities without lifecycle status fields do not emit status transitions; delete/restore workflows are outside this prototype.
+- Backend automated coverage currently contains 13 Java unit tests. Python unit coverage includes five tests for deterministic generation, relationships, anomaly labels, attribution credits and semantic validation. GitHub Actions runs Java verification, Python starter/full generation and semantic validation, fixed-seed reproducibility, the frontend production build, and desktop/mobile Chromium tests on pushes and pull requests.
+- Entity audit records append-only CREATED events and validated STATUS_CHANGED transitions for Campaign (PLANNED → ACTIVE → COMPLETED), Lead (NEW → QUALIFIED → CONVERTED), Opportunity (OPEN → WON), and DatasetRun (GENERATED → VALIDATED). Entities without lifecycle status fields do not emit status transitions; delete/restore workflows are outside this prototype.
 - The synthetic opportunity generator currently emphasizes closed-won journeys for the ROI walkthrough. Lost/open stage distributions and broader attribution evaluation metrics can be added in a later iteration.
 - The project is a local decision-support prototype, not a production marketing platform. Review and understand every implementation decision before discussing it in an interview.
 
@@ -126,4 +127,4 @@ The repository includes source, documentation, AI prompt history, generated full
 - Re-ran full-scale attribution calculation for run `bb216bac-f11d-479f-be10-6c9c05e5de3e`: 10,000 opportunities evaluated, 129,610 result rows created, zero opportunities without eligible touches. Validation returned exactly one finding for each required anomaly class.
 - Fixed a frontend timeout mismatch: full-scale generation previously exceeded the shared 60-second Axios timeout. The FULL generation request now allows 180 seconds, based on the measured ~115-second backend generation. After generation, the dashboard selects the newly created run so the visible metrics are scoped to it.
 - Rebuilt after code splitting: TypeScript compilation and Vite production build pass with no chunk-size warning; largest chunk is 457.10 kB minified.
-- Browser verification: Playwright executed 16 mocked-API interaction tests across desktop and mobile Chromium, plus 2 live browser-to-Spring Boot/PostgreSQL integration tests (18 passed). Coverage includes initial rendering, model/run filters, sidebar navigation, refresh, attribution/recalculation, validation, starter/full generation controls, API error feedback, live persisted data and mobile horizontal overflow.
+- Browser verification: Playwright executed 16 mocked-API interaction tests pass across desktop and mobile Chromium. Two optional live browser-to-Spring Boot/PostgreSQL integration tests are included and previously passed in the local environment. Coverage includes initial rendering, model/run filters, sidebar navigation, refresh, attribution/recalculation, validation, starter/full generation controls, API error feedback, live persisted data and mobile horizontal overflow.

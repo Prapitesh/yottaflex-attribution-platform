@@ -30,3 +30,4 @@ Generated DatasetRun, Campaign, Contact, Touchpoint, Lead and Opportunity creati
 
 ## Scale and resource notes
 Python export tooling and Java/PostgreSQL persistence have both been verified at challenge scale. The Java full run generated 500 campaigns, 50,000 contacts, 200,001 touchpoints, 10,000 opportunities, 10,001 orders and 499 cost records; attribution and SQL credit reconciliation were verified. PostgreSQL 18, Flyway V1?V3 and Hibernate schema validation pass locally.
+\nCampaign ROI aggregation marks the entire campaign unavailable when any cost row uses a currency different from the campaign currency. Matching-currency rows are not allowed to hide a mismatched row; no implicit FX conversion is performed.\n

@@ -61,7 +61,7 @@ def generate(seed,cn,con,tn,on,out):
         duplicate=dict(orders[0]);duplicate["id"]="ORD-EDGE-DUPLICATE";orders.append(duplicate)
         truth.append(dict(id="GT-DUPLICATE-REVENUE-001",issue_type="DUPLICATE_REVENUE",entity_type="ORDER",entity_id=duplicate["id"],expected_decision="COUNT_UNIQUE_REVENUE_KEY_ONCE",evaluation_split="TEST"))
     if contacts:
-        sessions.append(dict(id="SES-EDGE-ANON-001",contact_id=contacts[-1]["id"],anonymous_id="anon-no-evidence",started_at=iso(base+timedelta(days=200)),landing_path="/pricing",identity_link_verified="false"))
+        sessions.append(dict(id="SES-EDGE-ANON-001",contact_id="",anonymous_id="anon-no-evidence",started_at=iso(base+timedelta(days=200)),landing_path="/pricing",identity_link_verified="false"))
         truth.append(dict(id="GT-ANON-LINK-001",issue_type="UNVERIFIED_IDENTITY_LINK",entity_type="WEB_SESSION",entity_id="SES-EDGE-ANON-001",expected_decision="REJECT_IDENTITY_LINK",evaluation_split="TEST"))
     attribution=[]
     for opp in opps:
@@ -105,6 +105,10 @@ def generate(seed,cn,con,tn,on,out):
     (out/"evaluation_split.json").write_text(json.dumps(split,indent=2),encoding="utf-8")
     result={"seed":seed,"counts":{k:v["rows"] for k,v in manifest.items()},"files":manifest,"evaluation_split":split}
     (out/"manifest.json").write_text(json.dumps(result,indent=2),encoding="utf-8")
+    checksum_files=sorted(path for path in out.iterdir()
+                          if path.is_file() and path.name!="SHA256SUMS.txt")
+    checksum_lines=[f"{digest(path)}  {path.name}" for path in checksum_files]
+    (out/"SHA256SUMS.txt").write_text("\n".join(checksum_lines)+"\n",encoding="utf-8")
     return result
 def main():
     p=argparse.ArgumentParser();p.add_argument("--seed",type=int,default=SEED_DEFAULT);p.add_argument("--campaigns",type=int,default=12);p.add_argument("--contacts",type=int,default=300);p.add_argument("--touchpoints",type=int,default=1200);p.add_argument("--opportunities",type=int,default=80);p.add_argument("--full",action="store_true");p.add_argument("--out",type=Path,default=OUT_DEFAULT);a=p.parse_args()

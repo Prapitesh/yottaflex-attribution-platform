@@ -107,8 +107,12 @@ public class DashboardService {
         validateModel(model);
         return jdbc.queryForList("""
             with spend as (
-                select campaign_id,sum(amount) amount,min(currency) currency
-                from cost_records group by campaign_id
+                select cost.campaign_id,
+                    sum(case when cost.currency=campaign.currency then cost.amount else 0 end) amount,
+                    bool_or(cost.currency<>campaign.currency) has_currency_mismatch
+                from cost_records cost
+                join campaigns campaign on campaign.id=cost.campaign_id
+                group by cost.campaign_id
             ),
             attributed as (
                 select t.campaign_id,sum(a.attributed_revenue) amount
@@ -131,13 +135,13 @@ public class DashboardService {
                 group by t.campaign_id
             )
             select p.id campaign_id,p.name campaign_name,p.currency,
-                case when s.currency=p.currency then coalesce(s.amount,0) else 0 end spend,
+                case when s.has_currency_mismatch then 0 else coalesce(s.amount,0) end spend,
                 coalesce(r.amount,0) attributed_revenue,
                 case when s.campaign_id is null then 'UNAVAILABLE'
-                     when s.currency<>p.currency then 'CURRENCY_MISMATCH'
+                     when s.has_currency_mismatch then 'CURRENCY_MISMATCH'
                      when s.amount=0 then 'UNAVAILABLE'
                      else 'CALCULATED' end roi_status,
-                case when s.campaign_id is null or s.currency<>p.currency or s.amount=0 then null
+                case when s.campaign_id is null or s.has_currency_mismatch or s.amount=0 then null
                      else round(((coalesce(r.amount,0)-s.amount)/s.amount)*100,2)
                 end roi_percent
             from campaigns p

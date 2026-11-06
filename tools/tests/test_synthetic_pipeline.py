@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from generate_synthetic import generate
+from validate_dataset import validate
 
 class SyntheticPipelineTest(unittest.TestCase):
     def test_starter_relationships_anomaly_labels_and_credit(self):
@@ -26,6 +27,44 @@ class SyntheticPipelineTest(unittest.TestCase):
                 key=(row["opportunity_id"],row["model_name"])
                 weights[key]=weights.get(key,0.0)+float(row["credit"])
             self.assertTrue(all(abs(value-1.0)<0.000001 for value in weights.values()))
+    def test_semantic_validator_accepts_valid_dataset(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out=Path(temp)/"dataset"
+            generate(20261022,12,300,1200,80,out)
+            report=validate(out)
+            self.assertTrue(report["valid"], report["errors"])
+            self.assertEqual(report["duplicate_revenue_records"],1)
+            self.assertEqual(report["ground_truth_labels"],5)
+
+    def test_semantic_validator_rejects_unverified_identity_link(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out=Path(temp)/"dataset"
+            generate(20261022,12,300,1200,80,out)
+            path=out/"web_sessions.csv"
+            with path.open(encoding="utf-8",newline="") as stream:
+                rows=list(csv.DictReader(stream))
+            for row in rows:
+                if row["id"]=="SES-EDGE-ANON-001":
+                    row["contact_id"]="CON-2026-000001"
+            with path.open("w",encoding="utf-8",newline="") as stream:
+                writer=csv.DictWriter(stream,fieldnames=rows[0].keys())
+                writer.writeheader()
+                writer.writerows(rows)
+            report=validate(out)
+            self.assertFalse(report["valid"])
+            self.assertIn("unverified identity link must remain unlinked to a contact",report["errors"])
+
+    def test_semantic_validator_checks_export_checksum_manifest(self):
+        with tempfile.TemporaryDirectory() as temp:
+            out=Path(temp)/"dataset"
+            generate(20261022,12,300,1200,80,out)
+            split=out/"evaluation_split.json"
+            split.write_text(split.read_text(encoding="utf-8")+" ",encoding="utf-8")
+            report=validate(out)
+            self.assertFalse(report["valid"])
+            self.assertTrue(any("SHA256SUMS.txt: checksum mismatch for evaluation_split.json" in error
+                                for error in report["errors"]))
+
     def test_same_seed_produces_same_hashes(self):
         with tempfile.TemporaryDirectory() as temp:
             first,second=Path(temp)/"first",Path(temp)/"second"
