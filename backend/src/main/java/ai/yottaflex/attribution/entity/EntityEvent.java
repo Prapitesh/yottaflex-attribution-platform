@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @Entity
 @Table(name="entity_events",indexes=@Index(name="idx_entity_events_entity",columnList="entity_type,entity_id,occurred_at"))
@@ -15,7 +17,10 @@ public class EntityEvent {
     @Column(name="old_state",length=30) private String oldState;
     @Column(name="new_state",length=30) private String newState;
     @Column(name="occurred_at",nullable=false) private Instant occurredAt;
-    @JdbcTypeCode(SqlTypes.JSON) @Column(nullable=false,columnDefinition="jsonb") private String metadata="{}";
+    @JdbcTypeCode(SqlTypes.JSON) @Column(nullable=false,columnDefinition="jsonb") private Map<String,Object> metadata=new LinkedHashMap<>();
     protected EntityEvent(){}
-    public EntityEvent(String type,String entityId,String eventType,String oldState,String newState,Instant at,String metadata){this.entityType=type;this.entityId=entityId;this.eventType=eventType;this.oldState=oldState;this.newState=newState;this.occurredAt=at;this.metadata=metadata==null?"{}":metadata;}
+    public EntityEvent(String type,String entityId,String eventType,String oldState,String newState,Instant at,String metadata){
+        this.entityType=type;this.entityId=entityId;this.eventType=eventType;this.oldState=oldState;this.newState=newState;
+        this.occurredAt=at;this.metadata=Map.of();
+    }
 }
