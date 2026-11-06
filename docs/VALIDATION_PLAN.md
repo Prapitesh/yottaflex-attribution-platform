@@ -16,16 +16,24 @@
 | Python full reproducibility | `python tools/reproducibility_check.py --full` | PASS; row counts and checksums match |
 | React production build | `cd frontend; npm run build` | PASS; non-fatal bundle-size warning |
 
-## Runtime verification pending
+## Runtime verification
 
 | Check | Result |
 |---|---|
-| Flyway migration | BLOCKED — local PostgreSQL password authentication fails for user postgres (SQLSTATE 28P01) |
-| Hibernate schema validation | PENDING — Flyway must connect first |
-| Java JPA generator database integration | PENDING — requires PostgreSQL credentials |
-| REST API smoke tests | PENDING — requires Spring Boot context and PostgreSQL |
-| Run-separated analytics query | Compiled; SQL execution pending DB access |
-| Data quality SQL against labelled anomalies | Compiled; SQL execution pending DB access |
+| PostgreSQL 18.6 authentication | PASS — `yottaflex_attribution` database connected |
+| Flyway migrations | PASS — V1–V3 validated/applied |
+| Hibernate schema validation | PASS — EntityManagerFactory initialized with `ddl-auto: validate` |
+| Java starter generation | PASS — 12 campaigns, 300 contacts, 1,201 touchpoints, 80 opportunities |
+| Java attribution calculation | PASS — 846 attribution result rows |
+| Java data-quality inspection | PASS — all five required anomaly categories detected |
+| Dashboard summary API | PASS — HTTP 200 |
+| Dataset runs API | PASS — HTTP 200 |
+| Campaigns API | PASS — HTTP 200 |
+| Attribution results API | PASS — HTTP 200 |
+| Quality issues API | PASS — HTTP 200 |
+| Frontend Vite server | PASS — HTTP 200 on port 5173; source modules served |
+| Frontend/backend CORS | PASS — allowed origin `http://localhost:5173` |
+| Java/PostgreSQL full-scale generation | PASS — 500 campaigns, 50,000 contacts, 200,001 touchpoints, 10,000 opportunities, 10,001 orders and 499 cost records; completed in approximately 115 seconds |
 
 ## Acceptance rules covered by implementation/tests
 - Run-scoped synthetic snapshots preserve previous generated runs.
@@ -39,8 +47,11 @@
 - CREATED lifecycle events carry dataset-run metadata.
 - Ground-truth labels are separate from attribution input features.
 
-## Known caveats
-- JPA inserts for full scale are not yet benchmarked; run the starter dataset first.
-- The CSV tooling is validated at full scale; the database-backed generator is compiled but not runtime-tested.
-- Entity lifecycle history records CREATED events for generated Campaign, Contact, Touchpoint, Opportunity and DatasetRun objects. All business status transitions are not yet implemented.
+## Full-scale runtime evidence
+- Java/PostgreSQL full generation completed in approximately 115 seconds for 500 campaigns, 50,000 contacts, 200,001 touchpoints, 10,000 opportunities, 10,001 orders and 499 cost records.
+- Java attribution completed in approximately 38 seconds: 129,610 result rows across FIRST_TOUCH, LAST_TOUCH and LINEAR; 10,000 opportunities evaluated; zero without eligible touches.
+- SQL reconciliation returned 30,000 opportunity/model groups, all summing to exactly 1.000000; zero invalid credit groups.
+- Full-scale quality inspection found exactly five issues, one for each required anomaly class.
+- A PostgreSQL SQL backup was generated and packaged as data/generated-full/yottaflex_attribution_full.sql.tar.gz; it includes schema and append-only local runs.
+- Entity lifecycle history records CREATED events for generated DatasetRun, Campaign, Contact, Touchpoint and Opportunity objects. All later business status transitions are not yet implemented.
 - The Maven environment emits a non-fatal 401 metadata warning for a configured Flyway community repository; compilation and tests still succeed via resolved dependencies.

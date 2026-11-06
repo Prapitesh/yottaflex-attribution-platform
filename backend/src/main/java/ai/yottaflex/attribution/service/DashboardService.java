@@ -30,7 +30,7 @@ public class DashboardService {
                 join opportunities opp on opp.id=o.opportunity_id
                 join leads l on l.id=opp.lead_id
                 join contacts c on c.id=l.contact_id
-                where (? is null or c.dataset_run_id=?)
+                where (CAST(? AS VARCHAR) IS NULL or c.dataset_run_id=?)
                 order by o.external_revenue_key,o.recognized_at,o.id
             ) dedup
             """,BigDecimal.class,runId,runId);
@@ -40,7 +40,7 @@ public class DashboardService {
             from cost_records cost
             join campaigns campaign on campaign.id=cost.campaign_id
             where cost.currency=campaign.currency
-              and (? is null or campaign.dataset_run_id=?)
+              and (CAST(? AS VARCHAR) IS NULL or campaign.dataset_run_id=?)
             """,BigDecimal.class,runId,runId);
 
         return Map.of("runId",runId==null?"ALL":runId,
@@ -118,7 +118,7 @@ public class DashboardService {
                 join leads l on l.id=o.lead_id
                 join contacts c on c.id=l.contact_id
                 where a.model_name=?
-                  and (? is null or c.dataset_run_id=?)
+                  and (CAST(? AS VARCHAR) IS NULL or c.dataset_run_id=?)
                   and a.calculated_at=(
                     select max(a2.calculated_at)
                     from attribution_results a2
@@ -126,7 +126,7 @@ public class DashboardService {
                     join leads l2 on l2.id=o2.lead_id
                     join contacts c2 on c2.id=l2.contact_id
                     where a2.model_name=?
-                      and (? is null or c2.dataset_run_id=?)
+                      and (CAST(? AS VARCHAR) IS NULL or c2.dataset_run_id=?)
                   )
                 group by t.campaign_id
             )
@@ -143,9 +143,9 @@ public class DashboardService {
             from campaigns p
             left join spend s on s.campaign_id=p.id
             left join attributed r on r.campaign_id=p.id
-            where (? is null or p.dataset_run_id=?)
+            where (CAST(? AS VARCHAR) IS NULL or p.dataset_run_id=?)
             order by coalesce(r.amount,0) desc
-            """,model,runId,runId,model,runId,runId);
+            """,model,runId,runId,model,runId,runId,runId,runId);
     }
 
     public List<Map<String,Object>> attributionByModel(String model,String runId) {
@@ -158,7 +158,7 @@ public class DashboardService {
             join leads l on l.id=o.lead_id
             join contacts c on c.id=l.contact_id
             where a.model_name=?
-              and (? is null or c.dataset_run_id=?)
+              and (CAST(? AS VARCHAR) IS NULL or c.dataset_run_id=?)
               and a.calculated_at=(
                 select max(a2.calculated_at)
                 from attribution_results a2
@@ -166,7 +166,7 @@ public class DashboardService {
                 join leads l2 on l2.id=o2.lead_id
                 join contacts c2 on c2.id=l2.contact_id
                 where a2.model_name=?
-                  and (? is null or c2.dataset_run_id=?)
+                  and (CAST(? AS VARCHAR) IS NULL or c2.dataset_run_id=?)
               )
             group by a.model_name
             """,model,runId,runId,model,runId,runId);

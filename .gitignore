@@ -23,3 +23,6 @@ Thumbs.db
 # Runtime data
 data/generated/*
 !data/generated/.gitkeep
+
+# Keep the expanded SQL dump local; commit its compressed export instead
+/data/generated-full/*.sql

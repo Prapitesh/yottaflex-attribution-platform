@@ -29,4 +29,4 @@ Touchpoints use event time; leads use created time; opportunities use close date
 Generated Campaign, Contact, Touchpoint and Opportunity creations append immutable CREATED records in entity_events. This iteration does not implement all later lifecycle transitions.
 
 ## Scale and resource notes
-Python export tooling has been run at requested full scale locally. It currently materializes intermediate lists in memory. Java database insertion performance remains unmeasured until PostgreSQL credentials are configured.
+Python export tooling has been generated and validated at challenge scale. PostgreSQL 18, Flyway V1–V3, Hibernate schema validation and the Java starter generator have been verified locally. Java full-scale database insertion is being tested separately because it uses a large transactional batch and materializes the requested run in memory.

@@ -64,6 +64,9 @@ Requirements: Java 21, Maven 3.9+, Node 20+, PostgreSQL 16+.
 - `POST /api/v1/admin/recalculate/{runId}` — one run.
 - `POST /api/v1/admin/validate?runId={id}` — one run.
 
+## Full-scale database verification
+The Java/PostgreSQL generator has been executed at the requested full scale using seed 20261022: 500 campaigns, 50,000 contacts, 200,001 touchpoints, 10,000 opportunities, 10,001 orders and 499 cost records. Java attribution created 129,610 rows across all three models; 30,000 opportunity/model groups reconcile to 1.000000. Quality validation detected all five required anomaly classes. The export package in data/generated-full/ contains CSV/JSON files, Java run evidence, SHA-256 checksums and a compressed PostgreSQL SQL backup (yottaflex_attribution_full.sql.tar.gz). The SQL backup includes the schema and all local append-only runs.
+
 ## Attribution definitions
 - FIRST_TOUCH: full credit to earliest eligible interaction.
 - LAST_TOUCH: full credit to latest eligible interaction.
@@ -90,22 +93,19 @@ Requirements: Java 21, Maven 3.9+, Node 20+, PostgreSQL 16+.
 - `prompts/ASSUMPTIONS.md`
 
 ## Verification recorded 2026-11-06
-- `mvn test`: passed — 9 tests, zero failures.
-- `npm run build`: passed; Vite warns the minified JS chunk is larger than 500 kB.
-- Starter dataset: validator passed with no errors.
-- Starter repeated generation: row counts and per-file checksums identical.
-- Full dataset: 500 campaigns, 50,000 contacts, 200,001 touchpoints (200,000 baseline plus one labelled negative example), 10,000 opportunities, 15,120 attribution rows.
-- Full dataset validator passed with no errors; 13,410 opportunity/model groups reconcile to 1.0.
-- Full repeated generation: row counts and per-file checksums identical.
-- Java main sources and tests compile. Java database-backed generator is compiled; live database insertion remains pending.
-- Spring Boot initializes Spring Data repositories and Tomcat, then Flyway stops at PostgreSQL password authentication (SQLSTATE 28P01) for the local postgres account. Flyway migration, Hibernate mapping validation and REST API smoke tests have therefore not yet completed.
+- Backend: `mvn clean test` and `mvn test` passed; 9 tests, zero failures. Java 21 compilation succeeded.
+- Frontend: `npm run build` passed. Vite reports a non-fatal 619.88 kB minified JS chunk (183.47 kB gzip); code splitting is a follow-up optimization.
+- PostgreSQL 18.6 at `localhost:5432`: authenticated connection succeeded; Flyway validated and applied migrations V1–V3; Hibernate initialized with `ddl-auto: validate`.
+- Live Spring Boot API: dashboard summary, dataset-runs, campaigns, attribution results and quality issues endpoints returned HTTP 200. CORS allows `http://localhost:5173`.
+- Frontend dev server: `http://localhost:5173` returned HTTP 200; Vite served `main.tsx`, `App.tsx`, `DashboardPage.tsx` and `services/api.ts` successfully.
+- Java starter run: generated 12 campaigns, 300 contacts, 1,201 touchpoints including the labelled post-conversion example, and 80 opportunities. Attribution calculation produced 846 results; quality inspection identified all five anomaly classes.
+- Python full dataset: 500 campaigns, 50,000 contacts, 200,001 touchpoints (200,000 baseline plus one labelled negative example), 10,000 opportunities, and 15,120 attribution rows. Validator returned zero errors; 13,410 opportunity/model groups reconcile to 1.0. Repeated generation matched row counts and SHA-256 checksums.
 
-## Honest limitations
-- The Python generator/export and validators are verified at starter and full scale. The Java JPA generation endpoint is compiled and covered by unit rules, but its database runtime still needs credentials.
-- Full CSV-to-PostgreSQL bulk import is not yet implemented.
-- Lifecycle CREATED events are recorded for DatasetRun, Campaign, Contact, Touchpoint and Opportunity. Additional business status transitions (Lead/Opportunity status changes) are not yet modelled as a complete workflow.
-- Evaluation split labels are chronological and inherited by attribution results from opportunities; broader model evaluation metrics are not yet implemented.
-- The project is a local decision-support prototype, not a production marketing platform.
+## Remaining submission work
+- Verify Java/PostgreSQL full-scale generation at challenge volumes and record its runtime, row counts and validation results.
+- Add automated frontend component/API tests and lint/format enforcement; current frontend gate is strict TypeScript compilation plus Vite production build.
+- Publish the source to a public GitHub repository and verify anonymous access to the repository URL.
+- Review the final README and submission portal requirements. The project is an engineering prototype, not a production marketing ledger.
 
 ## Submission
 Use a dedicated public GitHub repository. Include all source files and prompt history. Do not publish credentials, private customer data or personal information. Test the repository link in a private browser session before submitting the URL in the YottaFlex candidate portal.
