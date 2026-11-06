@@ -101,11 +101,14 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 - Java starter run: generated 12 campaigns, 300 contacts, 1,201 touchpoints including the labelled post-conversion example, and 80 opportunities. Attribution calculation produced 846 results; quality inspection identified all five anomaly classes.
 - Python full dataset: 500 campaigns, 50,000 contacts, 200,001 touchpoints (200,000 baseline plus one labelled negative example), 10,000 opportunities, and 15,120 attribution rows. Validator returned zero errors; 13,410 opportunity/model groups reconcile to 1.0. Repeated generation matched row counts and SHA-256 checksums.
 
-## Remaining submission work
-- Verify Java/PostgreSQL full-scale generation at challenge volumes and record its runtime, row counts and validation results.
-- Add automated frontend component/API tests and lint/format enforcement; current frontend gate is strict TypeScript compilation plus Vite production build.
-- Publish the source to a public GitHub repository and verify anonymous access to the repository URL.
-- Review the final README and submission portal requirements. The project is an engineering prototype, not a production marketing ledger.
+## Known limitations and submission notes
+- The frontend has a strict TypeScript/Vite production build, but no browser-driven component interaction suite or lint/format gate yet. The production bundle is 619.88 kB minified (183.47 kB gzip); code splitting is a performance follow-up.
+- Backend automated coverage currently contains 9 Java unit tests plus the documented PostgreSQL-backed runtime checks. Additional repository-level integration tests are recommended.
+- Entity audit currently records CREATED events for generated DatasetRun, Campaign, Contact, Touchpoint and Opportunity entities; later business status transitions are not fully modelled.
+- The synthetic opportunity generator currently emphasizes closed-won journeys for the ROI walkthrough. Lost/open stage distributions and broader attribution evaluation metrics can be added in a later iteration.
+- The project is a local decision-support prototype, not a production marketing platform. Review and understand every implementation decision before discussing it in an interview.
 
 ## Submission
-Use a dedicated public GitHub repository. Include all source files and prompt history. Do not publish credentials, private customer data or personal information. Test the repository link in a private browser session before submitting the URL in the YottaFlex candidate portal.
+Public source repository: https://github.com/Prapitesh/yottaflex-attribution-platform
+
+The repository includes source, documentation, AI prompt history, generated full-scale CSV/JSON evidence, checksums, and a compressed PostgreSQL SQL backup. Do not publish credentials, private customer data or personal information. The candidate should independently verify the public repository and submit its URL in the YottaFlex candidate portal.
