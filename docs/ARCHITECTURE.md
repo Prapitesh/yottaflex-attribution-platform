@@ -1,32 +1,32 @@
 # Architecture and Decisions
 
-## Workflow
-1. Generate master records: Channel, Audience, Campaign and Creative, then Contact.
-2. Generate dependent Touchpoints, WebSessions, Leads, Opportunities and Orders using those IDs.
-3. Generate CostRecords from campaign budget-derived spend, with explicit labelled exceptions.
-4. Calculate attribution from Contact journeys in chronological event order.
-5. Evaluate the required data-quality rules and save exception + ground-truth records separately.
-6. Expose aggregate metrics and exceptions through REST endpoints.
-7. Render decision-oriented summaries in React.
+## System overview
+- Python generator: deterministic source exports, anomaly labels, attribution rows, manifests and chronological evaluation splits.
+- Persistence: PostgreSQL normalized relational schema, Flyway migrations, foreign keys, effective-dated audience bridge and entity event history.
+- Domain: Java services generate data, calculate attribution, inspect exceptions and aggregate ROI.
+- API: Spring Boot REST.
+- Presentation: React + TypeScript dashboard.
 
-## Attribution rules
-- Conversion anchor: Opportunity.closed_at.
-- Lookback: 180 days before close.
-- Eligible touchpoints: same Contact, at or before close, and no earlier than lookback start.
-- FIRST_TOUCH gives 1.0 to the earliest eligible touch.
-- LAST_TOUCH gives 1.0 to the latest eligible touch.
-- LINEAR splits 1.0 equally across eligible touches. Rounding remainder is assigned to the final touch so the opportunity's credit totals exactly 1.0.
-- No eligible touch means unattributed opportunity; the system must not fabricate a touchpoint.
+## Attribution specification
+Conversion anchor is `Opportunity.closed_at`. Eligible events belong to the same Contact and satisfy `closed_at - 180 days <= Touchpoint.event_at <= closed_at`, then sort chronologically.
+- FIRST_TOUCH gives 1.0 to earliest eligible event.
+- LAST_TOUCH gives 1.0 to latest eligible event.
+- LINEAR splits 1.0 equally, assigning rounding remainder to final event.
+- No eligible event means no attribution; never invent a touch.
 
-## Exceptions
-- Duplicate revenue: count a unique external revenue key once.
-- Post-conversion touch: exclude from attribution and report an issue.
-- Currency mismatch: quarantine ROI; do not invent FX conversion.
-- Missing campaign cost: mark ROI unavailable, not 0%.
-- Anonymous identity link: reject unless identity evidence is recorded.
+## Anomaly policy
+- Duplicate raw revenue keys remain visible, but recognized revenue aggregates once per external revenue key.
+- Post-close touch events are excluded from attribution.
+- Currency mismatch is quarantined; no fabricated FX rate.
+- Missing costs make ROI unavailable, not zero.
+- Unverified session/contact identity association is flagged.
+- Ground-truth labels are separate from input features.
 
-## Trade-offs
-- Synthetic-only data avoids privacy and redistribution problems.
-- PostgreSQL + Flyway makes constraints and schema versioning visible.
-- Deterministic IDs support repeatability and traceability.
-- Full dataset is generated on demand to keep local iteration quick.
+## Chronological evaluation
+Touchpoints use event time; leads use created time; opportunities use close date; orders use recognition date. Attribution rows inherit the opportunity's split. Ground truth never enters model features.
+
+## Audit trail
+Generated Campaign, Contact, Touchpoint and Opportunity creations append immutable CREATED records in entity_events. This iteration does not implement all later lifecycle transitions.
+
+## Scale and resource notes
+Python export tooling has been run at requested full scale locally. It currently materializes intermediate lists in memory. Java database insertion performance remains unmeasured until PostgreSQL credentials are configured.
