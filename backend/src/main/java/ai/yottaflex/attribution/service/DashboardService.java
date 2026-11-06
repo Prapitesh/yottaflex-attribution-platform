@@ -13,7 +13,7 @@ public class DashboardService {
         Map<String,Object> counts=new LinkedHashMap<>();
         for(String table:List.of("campaigns","contacts","touchpoints","web_sessions","leads","opportunities","orders","cost_records","attribution_results","data_quality_issues","entity_events"))
             counts.put(table,jdbc.queryForObject("select count(*) from "+table,Long.class));
-        BigDecimal revenue=jdbc.queryForObject("select coalesce(sum(revenue),0) from (select distinct on(external_revenue_key) revenue from orders order by external_revenue_key,recognized_at) x",BigDecimal.class);
+        BigDecimal revenue=jdbc.queryForObject("select coalesce(sum(revenue),0) from (select distinct on(external_revenue_key) external_revenue_key,revenue from orders order by external_revenue_key,recognized_at,id) x",BigDecimal.class);
         BigDecimal spend=jdbc.queryForObject("select coalesce(sum(c.amount),0) from cost_records c join campaigns p on p.id=c.campaign_id where c.currency=p.currency",BigDecimal.class);
         return Map.of("counts",counts,"recognizedRevenue",revenue,"reconciledSpend",spend,"campaignRoi",campaignRoi("LINEAR"));
     }
