@@ -7,8 +7,11 @@ import ai.yottaflex.attribution.service.GenerationEventRecorder;
 import ai.yottaflex.attribution.service.IdFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.math.*;
-import java.time.*;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -25,135 +28,157 @@ public class SyntheticDataGenerator {
     private final OpportunityRepository opportunities;
     private final OrderRecordRepository orders;
     private final CostRecordRepository costs;
+    private final DatasetRunRepository datasetRuns;
     private final GenerationEventRecorder events;
 
-    public SyntheticDataGenerator(ChannelRepository channels, CampaignRepository campaigns,
-            CreativeRepository creatives, AudienceRepository audiences, CampaignAudienceRepository bridges,
-            ContactRepository contacts, TouchpointRepository touchpoints, WebSessionRepository sessions,
-            LeadRepository leads, OpportunityRepository opportunities, OrderRecordRepository orders,
-            CostRecordRepository costs, GenerationEventRecorder events) {
-        this.channels=channels; this.campaigns=campaigns; this.creatives=creatives; this.audiences=audiences;
-        this.bridges=bridges; this.contacts=contacts; this.touchpoints=touchpoints; this.sessions=sessions;
-        this.leads=leads; this.opportunities=opportunities; this.orders=orders; this.costs=costs; this.events=events;
+    public SyntheticDataGenerator(ChannelRepository channels,CampaignRepository campaigns,
+            CreativeRepository creatives,AudienceRepository audiences,
+            CampaignAudienceRepository bridges,ContactRepository contacts,
+            TouchpointRepository touchpoints,WebSessionRepository sessions,
+            LeadRepository leads,OpportunityRepository opportunities,
+            OrderRecordRepository orders,CostRecordRepository costs,
+            DatasetRunRepository datasetRuns,GenerationEventRecorder events) {
+        this.channels=channels;this.campaigns=campaigns;this.creatives=creatives;
+        this.audiences=audiences;this.bridges=bridges;this.contacts=contacts;
+        this.touchpoints=touchpoints;this.sessions=sessions;this.leads=leads;
+        this.opportunities=opportunities;this.orders=orders;this.costs=costs;
+        this.datasetRuns=datasetRuns;this.events=events;
     }
 
     @Transactional
     public Map<String,Object> generate(GenerationRequest request) {
-        int nc=request.campaigns(), ncontact=request.contacts(), nt=request.touchpoints(), no=request.opportunities();
-        if(nc<1||ncontact<1||nt<1||no<1) throw new IllegalArgumentException("All generated volumes must be >= 1");
-        if(no>ncontact) throw new IllegalArgumentException("Opportunity count cannot exceed contact count in this generator");
-        orders.deleteAllInBatch(); opportunities.deleteAllInBatch(); leads.deleteAllInBatch(); sessions.deleteAllInBatch();
-        touchpoints.deleteAllInBatch(); costs.deleteAllInBatch(); bridges.deleteAllInBatch(); creatives.deleteAllInBatch();
-        campaigns.deleteAllInBatch(); contacts.deleteAllInBatch(); audiences.deleteAllInBatch(); channels.deleteAllInBatch();
+        int campaignCount=request.campaigns();
+        int contactCount=request.contacts();
+        int touchpointCount=request.touchpoints();
+        int opportunityCount=request.opportunities();
+        validateVolumes(campaignCount,contactCount,touchpointCount,opportunityCount);
 
+        // A dataset run is a durable snapshot; never delete rows from earlier runs.
+        String runId=UUID.randomUUID().toString();
         Random random=new Random(request.seed());
         Instant base=Instant.parse("2025-01-01T00:00:00Z");
         String[] segments={"SMB","MID_MARKET","ENTERPRISE","STARTUP"};
-        String[][] channelDefs={{"CH-001","Paid Search","PAID"},{"CH-002","Paid Social","SOCIAL"},
-            {"CH-003","Email","EMAIL"},{"CH-004","Organic Search","ORGANIC"},
-            {"CH-005","Partner Referral","REFERRAL"},{"CH-006","Field Event","OFFLINE"}};
-        List<Channel> channelRows=new ArrayList<>();
-        for(String[] d:channelDefs) channelRows.add(new Channel(d[0],d[1],d[2]));
-        channels.saveAll(channelRows);
 
-        List<Audience> audienceRows=new ArrayList<>();
-        for(int i=0;i<segments.length;i++) audienceRows.add(new Audience(String.format("AUD-%03d",i+1),segments[i],"Synthetic segment: "+segments[i]));
+        DatasetRun datasetRun=new DatasetRun(runId,request.seed(),campaignCount,
+            contactCount,touchpointCount,opportunityCount,Instant.now());
+        datasetRuns.save(datasetRun);
+
+        List<Channel> channelRows=createChannels(runId);
+        channels.saveAll(channelRows);
+        List<Audience> audienceRows=createAudiences(runId,segments);
         audiences.saveAll(audienceRows);
 
-        List<Campaign> campaignRows=new ArrayList<>(nc);
+        List<Campaign> campaignRows=new ArrayList<>(campaignCount);
         Map<String,Channel> channelByCampaign=new HashMap<>();
         IdFactory campaignIds=new IdFactory("CMP-2026-",6);
-        for(int i=0;i<nc;i++){
+        for(int i=0;i<campaignCount;i++) {
             Channel channel=channelRows.get(i%channelRows.size());
-            LocalDate from=LocalDate.of(2025,1,1).plusDays(random.nextInt(300));
-            Campaign campaign=new Campaign(campaignIds.next(),"Campaign "+(i+1)+" - "+channel.getName(),channel,
-                money(5000+random.nextInt(95000)),"INR",from,from.plusDays(365+random.nextInt(100)),"COMPLETED");
-            campaignRows.add(campaign); channelByCampaign.put(campaign.getId(),channel);
+            LocalDate startDate=LocalDate.of(2025,1,1).plusDays(random.nextInt(300));
+            Campaign campaign=new Campaign(runId+"-"+campaignIds.next(),
+                "Campaign "+(i+1)+" - "+channel.getName(),channel,
+                money(5000+random.nextInt(95000)),"INR",startDate,
+                startDate.plusDays(365+random.nextInt(100)),"COMPLETED",runId);
+            campaignRows.add(campaign);
+            channelByCampaign.put(campaign.getId(),channel);
         }
         campaigns.saveAll(campaignRows);
 
-        List<CampaignAudience> bridgeRows=new ArrayList<>();
-        for(int i=0;i<nc;i++) bridgeRows.add(new CampaignAudience(campaignRows.get(i),audienceRows.get(i%audienceRows.size()),campaignRows.get(i).getStartDate(),null));
+        List<CampaignAudience> bridgeRows=new ArrayList<>(campaignCount);
+        for(int i=0;i<campaignCount;i++) {
+            bridgeRows.add(new CampaignAudience(campaignRows.get(i),
+                audienceRows.get(i%audienceRows.size()),
+                campaignRows.get(i).getStartDate(),null));
+        }
         bridges.saveAll(bridgeRows);
 
-        List<Creative> creativeRows=new ArrayList<>();
+        List<Creative> creativeRows=new ArrayList<>(campaignCount);
         Map<String,Creative> creativeByCampaign=new HashMap<>();
-        for(int i=0;i<nc;i++){
+        for(int i=0;i<campaignCount;i++) {
             Campaign campaign=campaignRows.get(i);
-            Creative creative=new Creative("CRE-"+String.format("%06d",i+1),"Creative "+(i+1),
+            Creative creative=new Creative(runId+"-CRE-"+String.format("%06d",i+1),
+                "Creative "+(i+1),
                 new String[]{"SEARCH_AD","IMAGE","VIDEO","EMAIL"}[i%4],campaign);
-            creativeRows.add(creative); creativeByCampaign.put(campaign.getId(),creative);
+            creativeRows.add(creative);
+            creativeByCampaign.put(campaign.getId(),creative);
         }
         creatives.saveAll(creativeRows);
 
-        List<Contact> contactRows=new ArrayList<>(ncontact);
-        for(int i=0;i<ncontact;i++){
-            contactRows.add(new Contact(String.format("CON-2026-%06d",i+1),segments[random.nextInt(segments.length)],
-                base.plusSeconds(random.nextInt(365*86400))));
+        List<Contact> contactRows=new ArrayList<>(contactCount);
+        for(int i=0;i<contactCount;i++) {
+            contactRows.add(new Contact(runId+"-CON-2026-"+String.format("%06d",i+1),
+                segments[random.nextInt(segments.length)],
+                base.plusSeconds(random.nextInt(365*86400)),runId));
         }
         contacts.saveAll(contactRows);
 
-        List<Instant> conversionTimes=new ArrayList<>(no);
-        for(int i=0;i<no;i++) conversionTimes.add(base.plusSeconds(500L*86400+random.nextInt(90*86400)));
-        List<Touchpoint> touchRows=new ArrayList<>(nt+1);
-        int[] perContactSequence=new int[ncontact];
-        // 70% of base touches are assigned to contacts with opportunities to make real attribution journeys.
-        for(int i=0;i<nt;i++){
-            int contactIndex=random.nextInt(100)<70?random.nextInt(no):random.nextInt(ncontact);
+        List<Instant> conversionTimes=new ArrayList<>(opportunityCount);
+        for(int i=0;i<opportunityCount;i++) {
+            conversionTimes.add(base.plusSeconds(500L*86400+random.nextInt(90*86400)));
+        }
+
+        List<Touchpoint> touchRows=new ArrayList<>(touchpointCount+1);
+        int[] perContactSequence=new int[contactCount];
+        for(int i=0;i<touchpointCount;i++) {
+            int contactIndex=random.nextInt(100)<70
+                ?random.nextInt(opportunityCount):random.nextInt(contactCount);
             Contact contact=contactRows.get(contactIndex);
-            Campaign campaign=campaignRows.get(random.nextInt(nc));
+            Campaign campaign=campaignRows.get(random.nextInt(campaignCount));
             Channel channel=channelByCampaign.get(campaign.getId());
             boolean offline="OFFLINE".equals(channel.getChannelType());
-            Instant at;
-            if(contactIndex<no && random.nextInt(100)<70){
-                Instant conversion=conversionTimes.get(contactIndex);
-                at=conversion.minusSeconds(random.nextInt(170*86400));
-            }else{
-                at=base.plusSeconds(random.nextInt(450*86400));
+            Instant eventAt;
+            if(contactIndex<opportunityCount&&random.nextInt(100)<70) {
+                eventAt=conversionTimes.get(contactIndex).minusSeconds(random.nextInt(170*86400));
+            } else {
+                eventAt=base.plusSeconds(random.nextInt(450*86400));
             }
-            touchRows.add(new Touchpoint(IdFactory.contactTouch(contact.getId(),++perContactSequence[contactIndex]),
-                contact,campaign,creativeByCampaign.get(campaign.getId()),channel,at,
+            String touchId=runId+"-"+IdFactory.contactTouch(contact.getId(),++perContactSequence[contactIndex]);
+            touchRows.add(new Touchpoint(touchId,contact,campaign,
+                creativeByCampaign.get(campaign.getId()),channel,eventAt,
                 offline?"CALL":new String[]{"CLICK","IMPRESSION","EMAIL_OPEN"}[random.nextInt(3)],
                 offline?"OFFLINE":"ONLINE"));
         }
 
-        List<WebSession> sessionRows=new ArrayList<>(no+1);
-        List<Lead> leadRows=new ArrayList<>(no);
-        List<Opportunity> opportunityRows=new ArrayList<>(no);
-        List<OrderRecord> orderRows=new ArrayList<>(no+1);
-        for(int i=0;i<no;i++){
+        List<WebSession> sessionRows=new ArrayList<>(opportunityCount+1);
+        List<Lead> leadRows=new ArrayList<>(opportunityCount);
+        List<Opportunity> opportunityRows=new ArrayList<>(opportunityCount);
+        List<OrderRecord> orderRows=new ArrayList<>(opportunityCount+1);
+        for(int i=0;i<opportunityCount;i++) {
             Contact contact=contactRows.get(i);
             Instant conversion=conversionTimes.get(i);
-            WebSession session=new WebSession(String.format("SES-2026-%06d",i+1),contact,null,
-                conversion.minusSeconds(random.nextInt(45)*86400L),"/solutions/"+segments[i%segments.length].toLowerCase(Locale.ROOT),true);
+            String sequence=String.format("%06d",i+1);
+            WebSession session=new WebSession(runId+"-SES-2026-"+sequence,
+                contact,null,conversion.minusSeconds(random.nextInt(45)*86400L),
+                "/solutions/"+segments[i%segments.length].toLowerCase(Locale.ROOT),true,runId);
             sessionRows.add(session);
             Instant leadAt=conversion.minusSeconds(random.nextInt(60)*86400L+3600);
-            Lead lead=new Lead(String.format("LEAD-2026-%06d",i+1),contact,session,leadAt,"CONVERTED");
+            Lead lead=new Lead(runId+"-LEAD-2026-"+sequence,contact,session,leadAt,"CONVERTED");
             leadRows.add(lead);
             Instant closedAt=conversion.plusSeconds(random.nextInt(30)*86400L);
             BigDecimal revenue=money(10000+random.nextInt(190000));
-            Opportunity opportunity=new Opportunity(String.format("OPP-2026-%06d",i+1),lead,leadAt,closedAt,"WON",revenue,"INR");
+            Opportunity opportunity=new Opportunity(runId+"-OPP-2026-"+sequence,
+                lead,leadAt,closedAt,"WON",revenue,"INR");
             opportunityRows.add(opportunity);
-            orderRows.add(new OrderRecord(String.format("ORD-2026-%06d",i+1),opportunity,
-                "REV-"+String.format("%06d",i+1),revenue,"INR",closedAt));
+            orderRows.add(new OrderRecord(runId+"-ORD-2026-"+sequence,
+                opportunity,runId+"-REV-"+sequence,revenue,"INR",closedAt));
         }
 
-        // Five labelled exception cases. Keep the exception rows in their own traceable records.
-        if(no>0 && nc>0){
+        if(!opportunityRows.isEmpty()) {
             Opportunity first=opportunityRows.getFirst();
             Contact contact=first.getLead().getContact();
             Campaign campaign=campaignRows.getFirst();
             Channel channel=channelByCampaign.get(campaign.getId());
-            touchRows.add(new Touchpoint("TOUCH-EDGE-POST-CONVERSION",contact,campaign,creativeByCampaign.get(campaign.getId()),
-                channel,first.getClosedAt().plusSeconds(86400),"CLICK","ONLINE"));
+            touchRows.add(new Touchpoint(runId+"-TOUCH-EDGE-POST-CONVERSION",
+                contact,campaign,creativeByCampaign.get(campaign.getId()),channel,
+                first.getClosedAt().plusSeconds(86400),"CLICK","ONLINE"));
             OrderRecord firstOrder=orderRows.getFirst();
-            orderRows.add(new OrderRecord("ORD-EDGE-DUPLICATE",first,firstOrder.getExternalRevenueKey(),
-                firstOrder.getRevenue(),"INR",firstOrder.getRecognizedAt()));
-            sessionRows.add(new WebSession("SES-EDGE-ANON-001",contact,"anon-no-evidence",
-                base.plusSeconds(200L*86400),"/pricing",false));
+            orderRows.add(new OrderRecord(runId+"-ORD-EDGE-DUPLICATE",
+                first,firstOrder.getExternalRevenueKey(),firstOrder.getRevenue(),
+                "INR",firstOrder.getRecognizedAt()));
+            sessionRows.add(new WebSession(runId+"-SES-EDGE-ANON-001",
+                contact,"anon-no-evidence-"+runId,base.plusSeconds(200L*86400),
+                "/pricing",false,runId));
         }
 
-        // Persist in parent-first order, including deliberate edge rows.
         touchpoints.saveAll(touchRows);
         sessions.saveAll(sessionRows);
         leads.saveAll(leadRows);
@@ -161,22 +186,60 @@ public class SyntheticDataGenerator {
         orders.saveAll(orderRows);
 
         List<CostRecord> costRows=new ArrayList<>();
-        for(int i=0;i<nc;i++){
-            if(i==4) continue; // deliberate omitted cost.
+        for(int i=0;i<campaignCount;i++) {
+            if(i==4)continue;
             Campaign campaign=campaignRows.get(i);
-            BigDecimal spend=campaign.getBudget().multiply(new BigDecimal("0.72")).setScale(2,RoundingMode.HALF_UP);
-            costRows.add(new CostRecord(String.format("COST-%06d",i+1),campaign,campaign.getStartDate().plusDays(1),
-                spend,i==7?"USD":"INR","MEDIA_SPEND")); // campaign 8 deliberately has currency mismatch.
+            BigDecimal spend=campaign.getBudget().multiply(new BigDecimal("0.72"))
+                .setScale(2,RoundingMode.HALF_UP);
+            costRows.add(new CostRecord(runId+"-COST-"+String.format("%06d",i+1),
+                campaign,campaign.getStartDate().plusDays(1),spend,
+                i==7?"USD":"INR","MEDIA_SPEND"));
         }
         costs.saveAll(costRows);
 
-        events.recordCreated("CAMPAIGN",campaignRows.stream().map(Campaign::getId).toList());
-        events.recordCreated("CONTACT",contactRows.stream().map(Contact::getId).toList());
-        events.recordCreated("TOUCHPOINT",touchRows.stream().map(Touchpoint::getId).toList());
-        events.recordCreated("OPPORTUNITY",opportunityRows.stream().map(Opportunity::getId).toList());
+        events.recordCreated("DATASET_RUN",List.of(runId),runId);
+        events.recordCreated("CAMPAIGN",campaignRows.stream().map(Campaign::getId).toList(),runId);
+        events.recordCreated("CONTACT",contactRows.stream().map(Contact::getId).toList(),runId);
+        events.recordCreated("TOUCHPOINT",touchRows.stream().map(Touchpoint::getId).toList(),runId);
+        events.recordCreated("OPPORTUNITY",opportunityRows.stream().map(Opportunity::getId).toList(),runId);
 
-        return Map.of("seed",request.seed(),"campaigns",nc,"contacts",ncontact,"touchpoints",touchRows.size(),
-            "opportunities",no,"orders",orderRows.size(),"costRecords",costRows.size(),"labelledEdgeCases",5);
+        return Map.of("runId",runId,"seed",request.seed(),
+            "campaigns",campaignCount,"contacts",contactCount,
+            "touchpoints",touchRows.size(),"opportunities",opportunityCount,
+            "orders",orderRows.size(),"costRecords",costRows.size(),"labelledEdgeCases",5);
     }
-    private static BigDecimal money(int value){return BigDecimal.valueOf(value).setScale(2,RoundingMode.HALF_UP);}
+
+    private static void validateVolumes(int campaigns,int contacts,int touchpoints,int opportunities) {
+        if(campaigns<1||contacts<1||touchpoints<1||opportunities<1)
+            throw new IllegalArgumentException("All generated volumes must be greater than zero.");
+        if(opportunities>contacts)
+            throw new IllegalArgumentException("Opportunity count cannot exceed contact count.");
+        if(campaigns>500||contacts>50000||touchpoints>200000||opportunities>10000)
+            throw new IllegalArgumentException("Requested volume exceeds the documented FULL scale.");
+    }
+
+    private static List<Channel> createChannels(String runId) {
+        String[][] definitions={{"CH-001","Paid Search","PAID"},{"CH-002","Paid Social","SOCIAL"},
+            {"CH-003","Email","EMAIL"},{"CH-004","Organic Search","ORGANIC"},
+            {"CH-005","Partner Referral","REFERRAL"},{"CH-006","Field Event","OFFLINE"}};
+        List<Channel> rows=new ArrayList<>();
+        for(String[] definition:definitions) {
+            rows.add(new Channel(runId+"-"+definition[0],definition[1],
+                definition[2],runId));
+        }
+        return rows;
+    }
+
+    private static List<Audience> createAudiences(String runId,String[] segments) {
+        List<Audience> rows=new ArrayList<>();
+        for(int i=0;i<segments.length;i++) {
+            rows.add(new Audience(runId+"-AUD-"+String.format("%03d",i+1),
+                segments[i],"Synthetic segment: "+segments[i],runId));
+        }
+        return rows;
+    }
+
+    private static BigDecimal money(int value) {
+        return BigDecimal.valueOf(value).setScale(2,RoundingMode.HALF_UP);
+    }
 }

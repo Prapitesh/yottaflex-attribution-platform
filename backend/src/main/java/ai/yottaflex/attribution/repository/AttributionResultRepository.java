@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface AttributionResultRepository extends JpaRepository<AttributionResult,String> {
     List<AttributionResult> findByModelName(String modelName);
+    List<AttributionResult> findByModelNameOrderByCalculatedAtDesc(String modelName);
 }
