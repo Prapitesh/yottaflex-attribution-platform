@@ -14,7 +14,7 @@ Java full-stack application for explainable marketing attribution and ROI analyt
 - Touchpoint, web session, lead, opportunity, order and cost records with linked synthetic IDs.
 - First-touch, last-touch and linear attribution using an explicit 180-day pre-conversion window.
 - Data quality paths for duplicate revenue, post-conversion touchpoints, currency mismatch, omitted campaign costs and unverified identity links.
-- Immutable entity-created event records, ground-truth labels, CSV exports and SHA-256 manifests.
+- Append-only entity event history with validated campaign, lead, opportunity and dataset-run lifecycle transitions; ground-truth labels, CSV exports and SHA-256 manifests.
 - Database-backed dataset-run registry: every generation creates a traceable snapshot and never deletes previous runs.
 - Run-scoped attribution, dashboard and data-quality queries; lifecycle events carry the dataset run ID.
 - Structured API error responses and Java unit tests.
@@ -93,8 +93,8 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 - `prompts/ASSUMPTIONS.md`
 
 ## Verification recorded 2026-11-06
-- Backend: `mvn clean test` and `mvn test` passed; 9 tests, zero failures. Java 21 compilation succeeded.
-- Frontend: `npm run build` passed. Vite reports a non-fatal 619.88 kB minified JS chunk (183.47 kB gzip); code splitting is a follow-up optimization.
+- Backend: `mvn clean test` and `mvn test` passed; 12 tests, zero failures. Java 21 compilation succeeded.
+- Frontend: npm run build passes without chunk-size warnings. Output is split into a 73.50 kB application chunk, 457.10 kB Recharts chunk, 74.94 kB D3 chunk and 14.84 kB icon chunk (all minified chunks below 500 kB).
 - PostgreSQL 18.6 at `localhost:5432`: authenticated connection succeeded; Flyway validated and applied migrations V1–V3; Hibernate initialized with `ddl-auto: validate`.
 - Live Spring Boot API: dashboard summary, dataset-runs, campaigns, attribution results and quality issues endpoints returned HTTP 200. CORS allows `http://localhost:5173`.
 - Frontend dev server: `http://localhost:5173` returned HTTP 200; Vite served `main.tsx`, `App.tsx`, `DashboardPage.tsx` and `services/api.ts` successfully.
@@ -102,11 +102,14 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 - Python full dataset: 500 campaigns, 50,000 contacts, 200,001 touchpoints (200,000 baseline plus one labelled negative example), 10,000 opportunities, and 15,120 attribution rows. Validator returned zero errors; 13,410 opportunity/model groups reconcile to 1.0. Repeated generation matched row counts and SHA-256 checksums.
 
 ## Known limitations and submission notes
-- The frontend has a strict TypeScript/Vite production build, but no browser-driven component interaction suite or lint/format gate yet. The production bundle is 619.88 kB minified (183.47 kB gzip); code splitting is a performance follow-up.
-- Backend automated coverage currently contains 9 Java unit tests plus the documented PostgreSQL-backed runtime checks. Additional repository-level integration tests are recommended.
-- Entity audit currently records CREATED events for generated DatasetRun, Campaign, Contact, Touchpoint and Opportunity entities; later business status transitions are not fully modelled.
+- A lint/format enforcement gate is not configured. The frontend has a Playwright browser interaction suite covering desktop and mobile Chromium; it is not a substitute for testing every physical browser/device.
+- Backend automated coverage currently contains 12 Java unit tests plus the documented PostgreSQL-backed runtime checks. Additional repository-level integration tests are recommended.
+- Entity audit records append-only CREATED events and validated STATUS_CHANGED transitions for Campaign (PLANNED ? ACTIVE ? COMPLETED), Lead (NEW ? QUALIFIED ? CONVERTED), Opportunity (OPEN ? WON), and DatasetRun (GENERATED ? VALIDATED). Entities without lifecycle status fields do not emit status transitions; delete/restore workflows are outside this prototype.
 - The synthetic opportunity generator currently emphasizes closed-won journeys for the ROI walkthrough. Lost/open stage distributions and broader attribution evaluation metrics can be added in a later iteration.
 - The project is a local decision-support prototype, not a production marketing platform. Review and understand every implementation decision before discussing it in an interview.
+
+## Browser interaction tests
+Install Chromium once with `npx playwright install chromium`, then run `npm run test:e2e` from `frontend/`. The suite mocks API responses for deterministic UI interaction coverage. To also run the real browser-to-Spring Boot/PostgreSQL integration test, start the backend and database, then set `YOTTAFLEX_LIVE_API=1` before `npm run test:e2e` in PowerShell.
 
 ## Submission
 Public source repository: https://github.com/Prapitesh/yottaflex-attribution-platform
@@ -122,5 +125,5 @@ The repository includes source, documentation, AI prompt history, generated full
 - Starter end-to-end run ID: `b4be4c6a-7808-43cb-88ca-febe04d3ea0e`.
 - Re-ran full-scale attribution calculation for run `bb216bac-f11d-479f-be10-6c9c05e5de3e`: 10,000 opportunities evaluated, 129,610 result rows created, zero opportunities without eligible touches. Validation returned exactly one finding for each required anomaly class.
 - Fixed a frontend timeout mismatch: full-scale generation previously exceeded the shared 60-second Axios timeout. The FULL generation request now allows 180 seconds, based on the measured ~115-second backend generation. After generation, the dashboard selects the newly created run so the visible metrics are scoped to it.
-- Rebuilt the frontend after the fix: TypeScript compilation and Vite production build passed. The 619.93 kB minified bundle warning remains non-fatal.
-- Scope note: HTTP/API-to-database behavior and frontend asset delivery were exercised directly. A browser-driven Playwright/Cypress click-through suite is not installed and has not been claimed as completed.
+- Rebuilt after code splitting: TypeScript compilation and Vite production build pass with no chunk-size warning; largest chunk is 457.10 kB minified.
+- Browser verification: Playwright executed 16 mocked-API interaction tests across desktop and mobile Chromium, plus 2 live browser-to-Spring Boot/PostgreSQL integration tests (18 passed). Coverage includes initial rendering, model/run filters, sidebar navigation, refresh, attribution/recalculation, validation, starter/full generation controls, API error feedback, live persisted data and mobile horizontal overflow.

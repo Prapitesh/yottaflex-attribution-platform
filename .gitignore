@@ -26,3 +26,6 @@ data/generated/*
 
 # Keep the expanded SQL dump local; commit its compressed export instead
 /data/generated-full/*.sql
+# Playwright artifacts
+frontend/playwright-report/
+frontend/test-results/

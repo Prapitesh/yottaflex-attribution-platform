@@ -23,14 +23,16 @@ public class AttributionEngine {
     private final TouchpointRepository touchpoints;
     private final AttributionResultRepository results;
     private final JdbcTemplate jdbc;
+    private final GenerationEventRecorder events;
 
     public AttributionEngine(OpportunityRepository opportunities,
             TouchpointRepository touchpoints,AttributionResultRepository results,
-            JdbcTemplate jdbc) {
+            JdbcTemplate jdbc,GenerationEventRecorder events) {
         this.opportunities=opportunities;
         this.touchpoints=touchpoints;
         this.results=results;
         this.jdbc=jdbc;
+        this.events=events;
     }
 
     @Transactional
@@ -101,7 +103,10 @@ public class AttributionEngine {
         // Calculation rows are append-only and tied to the run via the opportunity.
         results.saveAll(generated);
         if(runId!=null) {
-            jdbc.update("update dataset_runs set status='VALIDATED' where id=?",runId);
+            int updated=jdbc.update("update dataset_runs set status='VALIDATED' where id=?",runId);
+            if(updated>0) {
+                events.recordTransition("DATASET_RUN",List.of(runId),"GENERATED","VALIDATED",runId);
+            }
         }
         return Map.of(
             "runId",runId==null?"ALL":runId,

@@ -23,3 +23,29 @@ Candidate provided the official YottaFlex Candidate Project FAQ and Candidate Pr
 "And I have opened my GitHub also. You can complete the balance work."
 
 **Work performed:** verified the live React/Vite frontend and Spring Boot/PostgreSQL API, checked frontend/backend structure and conventions, executed the Java/PostgreSQL FULL-scale generator (500 campaigns, 50,000 contacts, 200,001 touchpoints, 10,000 opportunities), ran all three attribution models (129,610 result rows across 30,000 opportunity/model groups; all credits reconcile to 1.000000), and validated all five anomaly classes. Generated a compressed PostgreSQL SQL backup, SHA-256 checksums, and Java run evidence. Updated README, architecture, data dictionary, validation evidence and assumptions to reflect current runtime results. GitHub connector returned no repositories for the linked account; no local Git remote is configured, so publication remains pending a repository URL or an authenticated GitHub connection with repository access.
+
+
+### Prompt 5 - public repository access (2026-11-06)
+"As you can see, I opened in incognito mode and in the normal tab. See."
+"do it for me"
+
+### Prompt 6 - localhost verification (2026-11-06)
+"try to do testing in locahost which i have opened if it is ok as expected then i submit github repo"
+"so you are saying coding challenge is ready"
+
+### Prompt 7 - close remaining quality gaps (2026-11-06)
+"1. We haven't manually tested every browser interaction.
+2. The frontend bundle-size warning remains, but it doesn't prevent the build. fix these also fix if any issues are pending in challenge"
+
+**AI assistance disclosure update:** ChatGPT helped add Playwright browser tests, wire sidebar navigation to dashboard sections, diagnose and fix a mobile horizontal overflow issue, split the frontend bundle into vendor chunks, and update validation documentation. The candidate should personally review and understand these changes and retain any additional prompts from other AI tools or earlier conversations not represented in this file.
+
+**Work performed:** 16 mocked-API browser tests passed across desktop/mobile Chromium; 2 additional live browser integration tests passed against the local Spring Boot/PostgreSQL instance. The live tests verified real dataset-run retrieval, dashboard data rendering, run filtering and FIRST_TOUCH model switching. Python unit tests (2), starter/full dataset validators (zero errors), and starter/full reproducibility checks (row counts and SHA-256 checksums match) passed.
+
+
+### Additional exact prompts recovered from the earlier YottaFlex project conversation (2026-11-06)
+"Yeah, start writing code of the backend first in the Yota Flex folder which I have opened in IntelliJ. Start doing the work."
+"Complete the project. Like I have opened IntelliJ, VS Code, and have run the frontend. Now I have opened pgAdmin for the PostgreSQL connection. You can do everything you want. Complete the project."
+"try to follow frontend,backend folder structure and coding standards And select which one fits to you properly, the postgresql"
+"And I have opened my GitHub also. You can complete the balance work."
+
+**Additional work performed:** implemented append-only lifecycle transition events for Campaign, Lead, Opportunity and DatasetRun. Added an allow-list for valid transitions and tests for old/new state metadata, run metadata, invalid terminal reversals and run validation. Backend suite now contains 12 passing tests.

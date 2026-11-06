@@ -26,7 +26,7 @@ Conversion anchor is `Opportunity.closed_at`. Eligible events belong to the same
 Touchpoints use event time; leads use created time; opportunities use close date; orders use recognition date. Attribution rows inherit the opportunity's split. Ground truth never enters model features.
 
 ## Audit trail
-Generated Campaign, Contact, Touchpoint and Opportunity creations append immutable CREATED records in entity_events. This iteration does not implement all later lifecycle transitions.
+Generated DatasetRun, Campaign, Contact, Touchpoint, Lead and Opportunity creations append CREATED records in entity_events. Campaign, Lead, Opportunity and DatasetRun state changes append STATUS_CHANGED records with old/new states and dataset-run metadata. A transition allow-list rejects invalid or terminal-state reversals. Delete/restore workflows and status transitions for entities without lifecycle status fields are outside this prototype.
 
 ## Scale and resource notes
-Python export tooling has been generated and validated at challenge scale. PostgreSQL 18, Flyway V1–V3, Hibernate schema validation and the Java starter generator have been verified locally. Java full-scale database insertion is being tested separately because it uses a large transactional batch and materializes the requested run in memory.
+Python export tooling and Java/PostgreSQL persistence have both been verified at challenge scale. The Java full run generated 500 campaigns, 50,000 contacts, 200,001 touchpoints, 10,000 opportunities, 10,001 orders and 499 cost records; attribution and SQL credit reconciliation were verified. PostgreSQL 18, Flyway V1?V3 and Hibernate schema validation pass locally.

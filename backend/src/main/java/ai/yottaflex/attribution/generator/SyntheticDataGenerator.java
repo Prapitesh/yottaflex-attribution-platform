@@ -208,11 +208,22 @@ public class SyntheticDataGenerator {
         }
         costs.saveAll(costRows);
 
-        events.recordCreated("DATASET_RUN", List.of(runId), runId);
-        events.recordCreated("CAMPAIGN", campaignRows.stream().map(Campaign::getId).toList(), runId);
+        events.recordCreated("DATASET_RUN", List.of(runId), runId, "GENERATED");
+        events.recordCreated("CAMPAIGN", campaignRows.stream().map(Campaign::getId).toList(), runId, "PLANNED");
+        events.recordTransition("CAMPAIGN", campaignRows.stream().map(Campaign::getId).toList(),
+                "PLANNED", "ACTIVE", runId);
+        events.recordTransition("CAMPAIGN", campaignRows.stream().map(Campaign::getId).toList(),
+                "ACTIVE", "COMPLETED", runId);
         events.recordCreated("CONTACT", contactRows.stream().map(Contact::getId).toList(), runId);
         events.recordCreated("TOUCHPOINT", touchRows.stream().map(Touchpoint::getId).toList(), runId);
-        events.recordCreated("OPPORTUNITY", opportunityRows.stream().map(Opportunity::getId).toList(), runId);
+        events.recordCreated("LEAD", leadRows.stream().map(Lead::getId).toList(), runId, "NEW");
+        events.recordTransition("LEAD", leadRows.stream().map(Lead::getId).toList(),
+                "NEW", "QUALIFIED", runId);
+        events.recordTransition("LEAD", leadRows.stream().map(Lead::getId).toList(),
+                "QUALIFIED", "CONVERTED", runId);
+        events.recordCreated("OPPORTUNITY", opportunityRows.stream().map(Opportunity::getId).toList(), runId, "OPEN");
+        events.recordTransition("OPPORTUNITY", opportunityRows.stream().map(Opportunity::getId).toList(),
+                "OPEN", "WON", runId);
 
         return Map.of("runId", runId, "seed", request.seed(),
                 "campaigns", campaignCount, "contacts", contactCount,

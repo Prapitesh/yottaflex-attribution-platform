@@ -24,11 +24,12 @@ class AttributionEngineTest {
     @Mock private TouchpointRepository touchpoints;
     @Mock private AttributionResultRepository results;
     @Mock private JdbcTemplate jdbc;
+    @Mock private GenerationEventRecorder events;
     private AttributionEngine engine;
 
     @BeforeEach
     void setUp() {
-        engine=new AttributionEngine(opportunities,touchpoints,results,jdbc);
+        engine=new AttributionEngine(opportunities,touchpoints,results,jdbc,events);
     }
 
     @Test
@@ -88,6 +89,20 @@ class AttributionEngineTest {
         assertEquals(1,outcome.get("opportunitiesWithoutEligibleTouches"));
         assertEquals(0,outcome.get("resultRowsCreated"));
         verify(results).saveAll(List.of());
+    }
+
+    @Test
+    void runScopedCalculationRecordsDatasetRunValidationTransition() {
+        Fixture fixture=fixture();
+        when(opportunities.findByLeadContactDatasetRunId("RUN-1")).thenReturn(List.of(fixture.opportunity));
+        when(touchpoints.findByContactDatasetRunId("RUN-1")).thenReturn(
+            List.of(fixture.early,fixture.middle,fixture.late));
+        when(jdbc.update(anyString(),eq("RUN-1"))).thenReturn(1);
+
+        engine.calculate("RUN-1");
+
+        verify(events).recordTransition("DATASET_RUN",List.of("RUN-1"),
+            "GENERATED","VALIDATED","RUN-1");
     }
 
     private Fixture fixture() {

@@ -35,4 +35,29 @@ class GenerationEventRecorderTest {
         assertEquals("CREATED",saved.getFirst().getEventType());
         assertEquals("RUN-1",saved.getFirst().getMetadata().get("datasetRunId"));
     }
+    @Test
+    void statusTransitionsRetainOldAndNewStateAndRunMetadata() {
+        GenerationEventRecorder recorder=new GenerationEventRecorder(repository);
+        recorder.recordTransition("OPPORTUNITY",List.of("OPP-1"),"OPEN","WON","RUN-2");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<EntityEvent>> captor=ArgumentCaptor.forClass(List.class);
+        verify(repository).saveAll(captor.capture());
+        EntityEvent event=captor.getValue().getFirst();
+
+        assertEquals("STATUS_CHANGED",event.getEventType());
+        assertEquals("OPEN",event.getOldState());
+        assertEquals("WON",event.getNewState());
+        assertEquals("RUN-2",event.getMetadata().get("datasetRunId"));
+    }
+
+    @Test
+    void unsupportedLifecycleTransitionIsRejected() {
+        GenerationEventRecorder recorder=new GenerationEventRecorder(repository);
+        assertThrows(IllegalArgumentException.class,
+            ()->recorder.recordTransition("OPPORTUNITY",List.of("OPP-1"),"WON","OPEN","RUN-3"));
+        verifyNoInteractions(repository);
+    }
+
+
 }
