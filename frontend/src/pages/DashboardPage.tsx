@@ -36,10 +36,16 @@ export default function DashboardPage(){
   setLoading(true);setMessage("");setError("");
   try{
    let result:any;
-   if(action==="starter"||action==="full"){result=await generate(action==="full"?"FULL":"STARTER");setMessage("Synthetic data generated: "+JSON.stringify(result));}
+   let generatedRunId:string|undefined;
+   if(action==="starter"||action==="full"){
+    result=await generate(action==="full"?"FULL":"STARTER");
+    generatedRunId=result.runId;
+    setMessage("Synthetic data generated: "+JSON.stringify(result));
+   }
    else if(action==="calculate"){result=await recalculate(runId||undefined);setMessage("Attribution calculated: "+JSON.stringify(result));}
    else{result=await validateData(runId||undefined);setMessage("Validation complete: "+JSON.stringify(result));}
-   await load();
+   if(generatedRunId) setRunId(generatedRunId);
+   else await load();
   }catch(e:any){setError(e?.response?.data?.message||e.message||"Action failed");}
   finally{setLoading(false);}
  };

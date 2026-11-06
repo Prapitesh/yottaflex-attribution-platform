@@ -29,7 +29,11 @@ export async function getIssues(runId?: string) {
 }
 
 export async function generate(scale: GenerationScale) {
-  return (await api.post("/admin/generate", { seed: 20261022, scale })).data;
+  // Full-scale generation takes ~115 seconds on the verified local database.
+  // Keep the UI request alive long enough for the backend transaction to finish.
+  return (await api.post("/admin/generate", { seed: 20261022, scale }, {
+    timeout: scale === "FULL" ? 180000 : 60000,
+  })).data;
 }
 
 export async function recalculate(runId?: string) {

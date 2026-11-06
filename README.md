@@ -112,3 +112,15 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 Public source repository: https://github.com/Prapitesh/yottaflex-attribution-platform
 
 The repository includes source, documentation, AI prompt history, generated full-scale CSV/JSON evidence, checksums, and a compressed PostgreSQL SQL backup. Do not publish credentials, private customer data or personal information. The candidate should independently verify the public repository and submit its URL in the YottaFlex candidate portal.
+
+
+## Frontend-to-database workflow verification (2026-11-06)
+- Verified the Vite app root, React entry, dashboard module and Axios API module all return HTTP 200 while the local Spring Boot API and PostgreSQL 18.6 database are running.
+- Verified CORS returns `Access-Control-Allow-Origin: http://localhost:5173` for the frontend origin.
+- Exercised every dashboard read route against the full-scale dataset run: dataset runs, dashboard summary, campaigns for FIRST_TOUCH/LAST_TOUCH/LINEAR, attribution summaries for all three models, and run-scoped quality issues. All returned HTTP 200; each campaign query returned 500 rows.
+- Exercised the complete starter write workflow through the same REST routes used by the frontend: POST generate (12 campaigns, 300 contacts, 1,201 touchpoints, 80 opportunities), POST recalculate (846 attribution rows across three models), POST validate (five required anomaly classes), then GET dashboard/campaign/quality data to confirm persisted results.
+- Starter end-to-end run ID: `b4be4c6a-7808-43cb-88ca-febe04d3ea0e`.
+- Re-ran full-scale attribution calculation for run `bb216bac-f11d-479f-be10-6c9c05e5de3e`: 10,000 opportunities evaluated, 129,610 result rows created, zero opportunities without eligible touches. Validation returned exactly one finding for each required anomaly class.
+- Fixed a frontend timeout mismatch: full-scale generation previously exceeded the shared 60-second Axios timeout. The FULL generation request now allows 180 seconds, based on the measured ~115-second backend generation. After generation, the dashboard selects the newly created run so the visible metrics are scoped to it.
+- Rebuilt the frontend after the fix: TypeScript compilation and Vite production build passed. The 619.93 kB minified bundle warning remains non-fatal.
+- Scope note: HTTP/API-to-database behavior and frontend asset delivery were exercised directly. A browser-driven Playwright/Cypress click-through suite is not installed and has not been claimed as completed.
