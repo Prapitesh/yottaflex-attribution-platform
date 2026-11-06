@@ -1,13 +1,13 @@
 # AI Prompt History
 
-YottaFlex requires all prompts submitted to every AI tool used for the project. Record exact prompts below. AI response text is optional.
+The YottaFlex Candidate FAQ requires all prompts submitted to every AI tool used for this project. Record each prompt exactly; AI response text is optional.
 
-## 2026-11-06 — ChatGPT
+## 2026-11-06 — ChatGPT (this conversation)
 
-### Prompt 1 — project kickoff
-"Use java full stack. Like ChatGPT, as you can see, I have opened the Intelligent Jotaflex. Try to start to build my project. I'm having three days. So today how much you can do, you can do it. Is it okay?"
+### Prompt 1 — kickoff
+"Hi aitipamula prapitesh, [candidate shared the YottaFlex AI Screening pass email and the complete 72 Hours Code Challenge problem statement, including business context, scope, all 12 entities, deterministic IDs, target synthetic volumes, five required anomaly cases, data dictionary/export/reproducibility instructions, acceptance criteria, public-data rules and portal deadline]. use java full stack [$remote-desktop-commander] Like ChatGPT, as you can see, I have opened the Intelligent Jotaflex. [candidate shared the application portal and code challenge page]. Try to start to build my project. I'm having three days. So today how much you can do, you can do it. Is it okay?"
 
-### Prompt 2 — implementation and iteration
-The candidate asked ChatGPT to begin building the supplied end-to-end campaign attribution, touchpoint, revenue and ROI challenge using Java full stack, and to work directly in the connected local development environment.
+### Prompt 2 — files and submission requirements
+Candidate provided the official YottaFlex Candidate Project FAQ and Candidate Project Submission Guidelines PDFs for review.
 
-**Disclosure:** ChatGPT supported architecture planning, scaffolding, code generation, and build/debug iterations. AI response text is not required by the supplied FAQ. The candidate must review, understand, modify where necessary, and validate the submitted code. Add every further prompt submitted to ChatGPT or any other AI tool, including IDE assistants.
+**AI assistance disclosure:** ChatGPT assisted with architecture, scaffolding, implementation, data-generation tooling, debugging, and validation scripts. AI answer text is not required by the FAQ. The candidate must review and understand all code, verify the runtime behavior, and explain decisions. Record every additional prompt given to any AI tool or IDE assistant here before submission.

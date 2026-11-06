@@ -1,7 +1,4 @@
 package ai.yottaflex.attribution.repository;
+import ai.yottaflex.attribution.entity.EntityEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.Repository;
-public interface EntityEventRepository extends Repository<Object,Long> {
-    @Query(value="select count(*) from entity_events",nativeQuery=true) long countEvents();
-}
+public interface EntityEventRepository extends JpaRepository<EntityEvent,Long> {}

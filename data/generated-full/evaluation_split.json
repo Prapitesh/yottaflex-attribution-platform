@@ -2,5 +2,5 @@
   "train_end": "2025-09-30",
   "validation_end": "2025-11-30",
   "test_start": "2025-12-01",
-  "basis": "Chronological event and conversion timestamps; ground_truth excluded from input features."
+  "basis": "Chronological opportunity close date. Attribution groups inherit opportunity split; ground_truth is evaluation-only."
 }

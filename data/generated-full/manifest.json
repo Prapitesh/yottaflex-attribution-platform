@@ -4,6 +4,7 @@
     "channels.csv": 6,
     "audiences.csv": 4,
     "campaigns.csv": 500,
+    "campaign_audiences.csv": 500,
     "creatives.csv": 500,
     "contacts.csv": 50000,
     "touchpoints.csv": 200001,
@@ -12,6 +13,7 @@
     "opportunities.csv": 10000,
     "orders.csv": 10001,
     "cost_records.csv": 499,
+    "attribution_results.csv": 15120,
     "ground_truth.csv": 5
   },
   "files": {
@@ -27,6 +29,10 @@
       "rows": 500,
       "sha256": "861a50c7f27b9a2fa08040990e5ae632f7afd4a8f8279c0433e4c04766995766"
     },
+    "campaign_audiences.csv": {
+      "rows": 500,
+      "sha256": "0d0bd8e19ed98fac1ce302255ad9613b7362b7af30e22c6c5cbcd893c956f9c0"
+    },
     "creatives.csv": {
       "rows": 500,
       "sha256": "6c801a1ef36e9636dae3d42cb35ac965f6f72a2f8423a78d35776f0373457026"
@@ -37,7 +43,7 @@
     },
     "touchpoints.csv": {
       "rows": 200001,
-      "sha256": "f430fa75cd97c66132dc10561331c2676848b8f90b4b1d5bf5f9d509a45f3c40"
+      "sha256": "a5e9ee1ef0f86d1dc46cb9d57eaddb65e84a01c187007388a05e258ad59e86c3"
     },
     "web_sessions.csv": {
       "rows": 10001,
@@ -45,19 +51,23 @@
     },
     "leads.csv": {
       "rows": 10000,
-      "sha256": "93c668af8bb33222734143c6d06e39639adf2217799e18735d5dc8941ede6dd7"
+      "sha256": "057c21be0e131b841b347f06a1c835a90899c766803f548519a4474b34a54d6d"
     },
     "opportunities.csv": {
       "rows": 10000,
-      "sha256": "22ea1f655d308598591a7be707e365d8f7546ccd217412c6dcdee475d23bd3c3"
+      "sha256": "4c92ad44bb55c803967f1787d09c369c2d68e79ae134d8cf94bc4acebc92d6ba"
     },
     "orders.csv": {
       "rows": 10001,
-      "sha256": "d2a6bf512c98a1da4da52b04297470ecdf6b5680f1075015d9b7aa56788f24ea"
+      "sha256": "09667378f84910c103d86090e96fb4fe63204a0b4f4b27b56813a6e085521588"
     },
     "cost_records.csv": {
       "rows": 499,
       "sha256": "95cd32b8fa2791c38f397fb6980e1f59620371fcd373c40b37857efc94126841"
+    },
+    "attribution_results.csv": {
+      "rows": 15120,
+      "sha256": "6c02c16da5aeae40f4361c7087d92caafa80a9be0dc151af19057fa70e64ace2"
     },
     "ground_truth.csv": {
       "rows": 5,
@@ -68,6 +78,6 @@
     "train_end": "2025-09-30",
     "validation_end": "2025-11-30",
     "test_start": "2025-12-01",
-    "basis": "Chronological event and conversion timestamps; ground_truth excluded from input features."
+    "basis": "Chronological opportunity close date. Attribution groups inherit opportunity split; ground_truth is evaluation-only."
   }
 }

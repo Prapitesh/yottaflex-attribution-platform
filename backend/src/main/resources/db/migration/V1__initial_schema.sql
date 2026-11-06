@@ -58,7 +58,7 @@ CREATE TABLE opportunities (
 );
 CREATE TABLE orders (
  id VARCHAR(30) PRIMARY KEY, opportunity_id VARCHAR(30) NOT NULL REFERENCES opportunities(id),
- external_revenue_key VARCHAR(60) NOT NULL UNIQUE, revenue NUMERIC(16,2) NOT NULL CHECK(revenue >= 0),
+ external_revenue_key VARCHAR(60) NOT NULL, revenue NUMERIC(16,2) NOT NULL CHECK(revenue >= 0),
  currency CHAR(3) NOT NULL, recognized_at TIMESTAMPTZ NOT NULL
 );
 CREATE TABLE cost_records (
