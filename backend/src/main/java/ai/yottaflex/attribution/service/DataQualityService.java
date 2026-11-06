@@ -93,13 +93,13 @@ public class DataQualityService {
         List<Map<String,Object>> identityRows=jdbc.queryForList("""
             select id session_id
             from web_sessions
-            where contact_id is not null and identity_link_verified=false
+            where identity_link_verified=false
               and (? is null or dataset_run_id=?)
             """,runId,runId);
         for(Map<String,Object> row:identityRows) {
             add(found,labels,"UNVERIFIED_IDENTITY_LINK","WEB_SESSION",
                 String.valueOf(row.get("session_id")),"ERROR",
-                "Session links a contact without verified identity evidence.",
+                "Anonymous session has no verified identity evidence; keep it unlinked from a contact.",
                 "REJECT_IDENTITY_LINK",detectedAt,runId);
         }
 

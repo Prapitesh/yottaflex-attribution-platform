@@ -185,7 +185,7 @@ public class SyntheticDataGenerator {
             orderRows.add(new OrderRecord("ORD-EDGE-DUP-" + suffix, first,
                     firstOrder.getExternalRevenueKey(), firstOrder.getRevenue(),
                     "INR", firstOrder.getRecognizedAt()));
-            sessionRows.add(new WebSession("SES-EDGE-ANON-" + suffix, contact,
+            sessionRows.add(new WebSession("SES-EDGE-ANON-" + suffix, null,
                     "anon-no-evidence-" + suffix, base.plusSeconds(200L * 86400),
                     "/pricing", false, runId));
         }

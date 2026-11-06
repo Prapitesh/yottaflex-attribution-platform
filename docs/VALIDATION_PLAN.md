@@ -4,11 +4,12 @@
 
 | Check | Command | Result |
 |---|---|---|
-| Backend compile and unit tests | cd backend; mvn clean verify | PASS - 13 tests, 0 failures |
+| Backend compile and unit tests | cd backend; mvn clean verify | PASS - 15 tests, 0 failures |
 | Attribution rules | AttributionEngineTest | PASS - first touch, last touch, linear normalization, lookback and no-eligible-touch handling |
 | Request validation | GenerationRequestTest | PASS - starter/full defaults and scale overrides |
 | API error envelope | ApiExceptionHandlerTest | PASS - malformed request and business validation responses |
 | Campaign ROI currency quarantine | DashboardServiceTest | PASS - any mismatched cost row makes campaign ROI unavailable |
+| Anonymous identity handling | WebSessionIdentityTest and DataQualityServiceTest | PASS - unverified sessions stay unlinked and are still detected |
 | Run event metadata | GenerationEventRecorderTest | PASS - creation and status-change events retain datasetRunId and old/new state |
 | Python unit tests | python -m unittest discover -s tools/tests -v | PASS - 5 tests |
 | Python starter validation | python tools/validate_dataset.py --data data/generated | PASS - zero errors |
@@ -57,14 +58,14 @@
 - Java attribution completed in approximately 38 seconds: 129,610 result rows across FIRST_TOUCH, LAST_TOUCH and LINEAR; 10,000 opportunities evaluated; zero without eligible touches.
 - SQL reconciliation returned 30,000 opportunity/model groups, all summing to exactly 1.000000; zero invalid credit groups.
 - Full-scale quality inspection found exactly five issues, one for each required anomaly class.
-- PostgreSQL backup is packaged as data/generated-full/yottaflex_attribution_full.sql.tar.gz.
+- PostgreSQL backup is packaged as data/generated-full/yottaflex_attribution_full.sql.tar.gz; archived anonymous-session rows were corrected to have NULL contact_id when identity is unverified.
 - Python semantic validation verifies anomaly targets, unverified identity links, 180-day contact-matched attribution, credit totals, chronological split consistency, manifest counts and SHA-256 checksums, including the separate SHA256SUMS.txt artifact manifest.
 - A non-fatal Maven metadata 401 warning may appear for the configured Flyway community repository; compilation, tests and packaging succeed with resolved dependencies.
 
 ## Browser interaction verification
 
 - Playwright runs eight mocked-API scenarios on desktop Chromium and the same eight on mobile Chromium (16 tests total; all passed in the final default run).
-- Two optional live browser-to-Spring Boot/PostgreSQL integration tests are included. Both passed in the earlier local live run; the final backend currency-quarantine change is additionally covered by DashboardServiceTest.
+- Two optional live browser-to-Spring Boot/PostgreSQL integration tests are included. Both passed in the earlier local live run; the final currency and anonymous-identity changes are additionally covered by DashboardServiceTest, WebSessionIdentityTest and DataQualityServiceTest.
 - Coverage includes dashboard rendering, model selection, run filtering, sidebar navigation, attribution, validation, starter/full generation controls, API error feedback, refresh and mobile overflow.
 - A 390px viewport test initially exposed 39px horizontal overflow; the responsive header fix resolved it.
 - No hosted production deployment or physical iOS/Android device testing is claimed.

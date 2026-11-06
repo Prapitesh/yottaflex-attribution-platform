@@ -80,7 +80,7 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 - Post-conversion touches are excluded.
 - Campaign ROI is quarantined if any cost row has a currency different from the campaign currency; no FX rate is assumed.
 - Missing campaign cost means ROI unavailable, not 0%.
-- An identity association without evidence is flagged and rejected.
+- Unverified anonymous sessions stay unlinked to contacts, are flagged, and are rejected from identity resolution.
 - Quality findings and ground-truth labels are appended per inspection run. The export validator checks that anomaly labels point to real records and that each record actually exhibits the labelled exception.
 - `ground_truth.csv` is evaluation-only and never used as an input feature.
 
@@ -94,7 +94,7 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 - `.github/workflows/ci.yml`
 
 ## Verification recorded 2026-11-06
-- Backend: Maven clean verify passed; 13 tests, zero failures. Java 21 compilation and executable JAR packaging succeeded.
+- Backend: Maven clean verify passed; 15 tests, zero failures. Java 21 compilation and executable JAR packaging succeeded.
 - Frontend: clean npm ci installed 138 packages with zero reported vulnerabilities; npm run build passes without chunk-size warnings. Output is split into a 73.50 kB application chunk, 457.10 kB Recharts chunk, 74.94 kB D3 chunk and 14.84 kB icon chunk (all minified chunks below 500 kB).
 - PostgreSQL 18.6 at `localhost:5432`: authenticated connection succeeded; Flyway validated and applied migrations V1–V3; Hibernate initialized with `ddl-auto: validate`.
 - Live Spring Boot API: dashboard summary, dataset-runs, campaigns, attribution results and quality issues endpoints returned HTTP 200. CORS allows `http://localhost:5173`.
@@ -104,7 +104,7 @@ The Java/PostgreSQL generator has been executed at the requested full scale usin
 
 ## Known limitations and submission notes
 - A lint/format enforcement gate is not configured. The frontend has a Playwright browser interaction suite covering desktop and mobile Chromium; it is not a substitute for testing every physical browser/device.
-- Backend automated coverage currently contains 13 Java unit tests. Python unit coverage includes five tests for deterministic generation, relationships, anomaly labels, attribution credits and semantic validation. GitHub Actions runs Java verification, Python starter/full generation and semantic validation, fixed-seed reproducibility, the frontend production build, and desktop/mobile Chromium tests on pushes and pull requests.
+- Backend automated coverage currently contains 15 Java unit tests. Python unit coverage includes five tests for deterministic generation, relationships, anomaly labels, attribution credits and semantic validation. GitHub Actions runs Java verification, Python starter/full generation and semantic validation, fixed-seed reproducibility, the frontend production build, and desktop/mobile Chromium tests on pushes and pull requests.
 - Entity audit records append-only CREATED events and validated STATUS_CHANGED transitions for Campaign (PLANNED → ACTIVE → COMPLETED), Lead (NEW → QUALIFIED → CONVERTED), Opportunity (OPEN → WON), and DatasetRun (GENERATED → VALIDATED). Entities without lifecycle status fields do not emit status transitions; delete/restore workflows are outside this prototype.
 - The synthetic opportunity generator currently emphasizes closed-won journeys for the ROI walkthrough. Lost/open stage distributions and broader attribution evaluation metrics can be added in a later iteration.
 - The project is a local decision-support prototype, not a production marketing platform. Review and understand every implementation decision before discussing it in an interview.
