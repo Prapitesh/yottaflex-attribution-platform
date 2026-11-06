@@ -11,3 +11,9 @@ The YottaFlex Candidate FAQ requires all prompts submitted to every AI tool used
 Candidate provided the official YottaFlex Candidate Project FAQ and Candidate Project Submission Guidelines PDFs for review.
 
 **AI assistance disclosure:** ChatGPT assisted with architecture, scaffolding, implementation, data-generation tooling, debugging, and validation scripts. AI answer text is not required by the FAQ. The candidate must review and understand all code, verify the runtime behavior, and explain decisions. Record every additional prompt given to any AI tool or IDE assistant here before submission.
+
+
+### Prompt 3 — project completion and verification (2026-11-06)
+"[$remote-desktop-commander] You have my system control, right? Do it. I've opened that PJ9 also. Do everything you want, but complete the project, that's it."
+
+**Work performed in this session:** reran the Java backend unit suite, frontend TypeScript/Vite production build, Python unit suite, starter dataset validator and reproducibility check; generated the full-scale CSV export package with seed 20261022; validated all full-scale rows and confirmed row-count and SHA-256 reproducibility. Inspected PostgreSQL 18 local connectivity and confirmed the database still requires a locally configured password. No database password was extracted, reset, or changed. No Git remote or authenticated GitHub CLI was available, so repository publication was not performed.
