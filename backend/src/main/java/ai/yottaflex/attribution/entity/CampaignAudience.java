@@ -9,16 +9,13 @@ import java.util.Objects;
 @Table(name="campaign_audiences")
 @IdClass(CampaignAudience.Key.class)
 public class CampaignAudience {
-    @Id
-    @Column(name="campaign_id",nullable=false,length=30)
+    @Id @Column(name="campaign_id",nullable=false,length=50)
     private String campaignId;
 
-    @Id
-    @Column(name="audience_id",nullable=false,length=30)
+    @Id @Column(name="audience_id",nullable=false,length=50)
     private String audienceId;
 
-    @Id
-    @Column(name="effective_from",nullable=false)
+    @Id @Column(name="effective_from",nullable=false)
     private LocalDate effectiveFrom;
 
     @ManyToOne(fetch=FetchType.LAZY,optional=false)
@@ -32,9 +29,9 @@ public class CampaignAudience {
     @Column(name="effective_to")
     private LocalDate effectiveTo;
 
-    protected CampaignAudience() {}
+    protected CampaignAudience(){}
 
-    public CampaignAudience(Campaign campaign,Audience audience,LocalDate from,LocalDate to) {
+    public CampaignAudience(Campaign campaign,Audience audience,LocalDate from,LocalDate to){
         this.campaign=campaign;
         this.audience=audience;
         this.campaignId=campaign.getId();
@@ -47,16 +44,17 @@ public class CampaignAudience {
         public String campaignId;
         public String audienceId;
         public LocalDate effectiveFrom;
-        public Key() {}
+        public Key(){}
 
-        @Override public boolean equals(Object other) {
+        @Override public boolean equals(Object other){
             if(this==other)return true;
             if(!(other instanceof Key key))return false;
             return Objects.equals(campaignId,key.campaignId)
                 &&Objects.equals(audienceId,key.audienceId)
                 &&Objects.equals(effectiveFrom,key.effectiveFrom);
         }
-        @Override public int hashCode() {
+
+        @Override public int hashCode(){
             return Objects.hash(campaignId,audienceId,effectiveFrom);
         }
     }
