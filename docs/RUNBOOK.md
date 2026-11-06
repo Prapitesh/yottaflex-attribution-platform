@@ -1,7 +1,7 @@
 # Run the YottaFlex Attribution Platform on Windows
 
 ## 1. Database connection
-The application uses PostgreSQL and Flyway. In pgAdmin, connect to the PostgreSQL server that you choose to use, then create a database named `yottaflex_attribution` if it does not already exist:
+The selected database is **PostgreSQL 18 on localhost:5432**. This matches the application's default JDBC URL and uses the newer installed server. In pgAdmin, connect to the PostgreSQL 18 server (port `5432`), then create a database named `yottaflex_attribution` if it does not already exist:
 
 ```sql
 CREATE DATABASE yottaflex_attribution;
