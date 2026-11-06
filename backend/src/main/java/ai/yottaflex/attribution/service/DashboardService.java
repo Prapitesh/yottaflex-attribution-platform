@@ -97,9 +97,8 @@ public class DashboardService {
             case "data_quality_issues" ->
                 jdbc.queryForObject("""
                     select count(*) from data_quality_issues q
-                    where q.metadata->>'datasetRunId'=?
-                       or q.entity_id like ?
-                    """,Long.class,runId,"%"+runId+"%");
+                    where q.dataset_run_id=?
+                    """,Long.class,runId);
             default -> throw new IllegalArgumentException("Unsupported dashboard table: "+table);
         };
     }
@@ -115,7 +114,20 @@ public class DashboardService {
                 select t.campaign_id,sum(a.attributed_revenue) amount
                 from attribution_results a
                 join touchpoints t on t.id=a.touchpoint_id
+                join opportunities o on o.id=a.opportunity_id
+                join leads l on l.id=o.lead_id
+                join contacts c on c.id=l.contact_id
                 where a.model_name=?
+                  and (? is null or c.dataset_run_id=?)
+                  and a.calculated_at=(
+                    select max(a2.calculated_at)
+                    from attribution_results a2
+                    join opportunities o2 on o2.id=a2.opportunity_id
+                    join leads l2 on l2.id=o2.lead_id
+                    join contacts c2 on c2.id=l2.contact_id
+                    where a2.model_name=?
+                      and (? is null or c2.dataset_run_id=?)
+                  )
                 group by t.campaign_id
             )
             select p.id campaign_id,p.name campaign_name,p.currency,
@@ -133,7 +145,7 @@ public class DashboardService {
             left join attributed r on r.campaign_id=p.id
             where (? is null or p.dataset_run_id=?)
             order by coalesce(r.amount,0) desc
-            """,model,runId,runId);
+            """,model,runId,runId,model,runId,runId);
     }
 
     public List<Map<String,Object>> attributionByModel(String model,String runId) {
@@ -145,9 +157,19 @@ public class DashboardService {
             join opportunities o on o.id=a.opportunity_id
             join leads l on l.id=o.lead_id
             join contacts c on c.id=l.contact_id
-            where a.model_name=? and (? is null or c.dataset_run_id=?)
+            where a.model_name=?
+              and (? is null or c.dataset_run_id=?)
+              and a.calculated_at=(
+                select max(a2.calculated_at)
+                from attribution_results a2
+                join opportunities o2 on o2.id=a2.opportunity_id
+                join leads l2 on l2.id=o2.lead_id
+                join contacts c2 on c2.id=l2.contact_id
+                where a2.model_name=?
+                  and (? is null or c2.dataset_run_id=?)
+              )
             group by a.model_name
-            """,model,runId,runId);
+            """,model,runId,runId,model,runId,runId);
     }
 
     private void validateModel(String model) {

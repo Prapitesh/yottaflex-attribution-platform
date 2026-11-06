@@ -6,7 +6,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name="attribution_results",
-    indexes=@Index(name="idx_attr_model",columnList="model_name,opportunity_id"))
+    indexes=@Index(name="idx_attr_model",columnList="model_name,opportunity_id,calculated_at"))
 public class AttributionResult {
     @Id @Column(length=36) private String id;
 

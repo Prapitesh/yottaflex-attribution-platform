@@ -1,7 +1,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {Activity,ArrowDownRight,ArrowUpRight,BarChart3,CheckCircle2,Database,Download,GitBranch,Layers,Play,RefreshCw,ShieldAlert,Sparkles,Target,Wallet,Workflow} from "lucide-react";
-import {Area,AreaChart,Bar,BarChart,CartesianGrid,Cell,Legend,Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis} from "recharts";
-import {generate,getCampaigns,getIssues,getSummary,recalculate,validateData} from "./services/api";
+import {Bar,BarChart,CartesianGrid,ResponsiveContainer,Tooltip,XAxis,YAxis} from "recharts";
+import {generate,getCampaigns,getIssues,getSummary,getDatasetRuns,recalculate,validateData,type AttributionModel} from "./services/api";
 
 type Row=Record<string,any>;
 const money=(n:number)=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",maximumFractionDigits:0}).format(n||0);
@@ -11,24 +11,32 @@ export default function App(){
  const [summary,setSummary]=useState<Row|null>(null);
  const [campaigns,setCampaigns]=useState<Row[]>([]);
  const [issues,setIssues]=useState<Row[]>([]);
- const [model,setModel]=useState("LINEAR");
+ const [runs,setRuns]=useState<Row[]>([]);
+ const [runId,setRunId]=useState("");
+ const [model,setModel]=useState<AttributionModel>("LINEAR");
  const [loading,setLoading]=useState(false);
  const [message,setMessage]=useState("");
  const [error,setError]=useState("");
  const counts=summary?.counts||{};
  const load=async()=>{
-  try{setError("");const [s,c,i]=await Promise.all([getSummary(),getCampaigns(model),getIssues()]);setSummary(s);setCampaigns(c);setIssues(i);}
+  try{
+   setError("");
+   const selectedRun=runId || undefined;
+   const [s,c,i,r]=await Promise.all([getSummary(selectedRun),getCampaigns(model,selectedRun),getIssues(selectedRun),getDatasetRuns()]);
+   setSummary(s);setCampaigns(c);setIssues(i);setRuns(r);
+   if(runId && !r.some((entry:Row)=>entry.id===runId)) setRunId("");
+  }
   catch(e:any){setError(e?.response?.data?.message||"Cannot reach the API. Start Spring Boot and PostgreSQL, then refresh.");}
  };
- useEffect(()=>{load();},[model]);
+ useEffect(()=>{load();},[model,runId]);
  const topCampaigns=useMemo(()=>campaigns.slice(0,8).map(c=>({...c,shortName:String(c.campaign_name||"").replace("Campaign ","C")})),[campaigns]);
  const run=async(action:string)=>{
   setLoading(true);setMessage("");setError("");
   try{
    let result:any;
    if(action==="starter"||action==="full"){result=await generate(action==="full"?"FULL":"STARTER");setMessage("Synthetic data generated: "+JSON.stringify(result));}
-   else if(action==="calculate"){result=await recalculate();setMessage("Attribution calculated: "+JSON.stringify(result));}
-   else{result=await validateData();setMessage("Validation complete: "+JSON.stringify(result));}
+   else if(action==="calculate"){result=await recalculate(runId||undefined);setMessage("Attribution calculated: "+JSON.stringify(result));}
+   else{result=await validateData(runId||undefined);setMessage("Validation complete: "+JSON.stringify(result));}
    await load();
   }catch(e:any){setError(e?.response?.data?.message||e.message||"Action failed");}
   finally{setLoading(false);}
@@ -45,7 +53,7 @@ export default function App(){
    <div className="sidebar-bottom"><div className="status-dot"/> Synthetic environment <small>SEED · 20261022</small></div>
   </aside>
   <main className="main">
-   <header className="topbar"><div><div className="eyebrow">MARKETING INTELLIGENCE / OVERVIEW</div><h1>Attribution overview</h1></div><div className="top-actions"><span className="live"><i/> LOCAL ENVIRONMENT</span><button className="icon-btn" onClick={load}><RefreshCw size={16}/></button><div className="avatar">PA</div></div></header>
+   <header className="topbar"><div><div className="eyebrow">MARKETING INTELLIGENCE / OVERVIEW</div><h1>Attribution overview</h1></div><div className="top-actions"><select aria-label="Dataset run" value={runId} onChange={e=>setRunId(e.target.value)}><option value="">All dataset runs</option>{runs.map((r:Row)=><option key={r.id} value={r.id}>{r.id.slice(0,12)} · {r.status}</option>)}</select><span className="live"><i/> LOCAL ENVIRONMENT</span><button className="icon-btn" onClick={load}><RefreshCw size={16}/></button><div className="avatar">PA</div></div></header>
    {error&&<div className="alert error"><ShieldAlert size={18}/>{error}</div>}
    {message&&<div className="alert success"><CheckCircle2 size={18}/>{message}</div>}
    <section className="hero"><div><div className="hero-tag"><Sparkles size={14}/> PERFORMANCE WORKSPACE</div><h2>Know what drives<br/><em>real revenue.</em></h2><p>Connect every campaign touch to pipeline and closed revenue. Compare attribution models with transparent, traceable decisions.</p><div className="hero-actions"><button className="primary" disabled={loading} onClick={()=>run("calculate")}><Play size={15} fill="currentColor"/> Run attribution</button><button className="secondary" disabled={loading} onClick={()=>run("starter")}><Database size={15}/> Generate starter data</button></div></div><div className="hero-graphic"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="orbit-core"><Target size={36}/></div><div className="floating f1">+38.4%<small>ATTRIBUTED ROI</small></div><div className="floating f2"><Activity size={14}/> Journey mapped</div></div></section>
@@ -57,7 +65,7 @@ export default function App(){
     <Metric icon={<ShieldAlert/>} label="Quality exceptions" value={number(counts.data_quality_issues)} note="Exceptions requiring review" trend={issuesCount?"REVIEW":"CLEAR"}/>
    </div>
    <section className="charts-grid">
-    <div className="panel wide"><div className="panel-head"><div><div className="eyebrow">CAMPAIGN PERFORMANCE</div><h3>Attributed revenue by campaign</h3></div><select value={model} onChange={e=>setModel(e.target.value)}><option value="FIRST_TOUCH">First touch</option><option value="LAST_TOUCH">Last touch</option><option value="LINEAR">Linear multi-touch</option></select></div>
+    <div className="panel wide"><div className="panel-head"><div><div className="eyebrow">CAMPAIGN PERFORMANCE</div><h3>Attributed revenue by campaign</h3></div><select value={model} onChange={e=>setModel(e.target.value as AttributionModel)}><option value="FIRST_TOUCH">First touch</option><option value="LAST_TOUCH">Last touch</option><option value="LINEAR">Linear multi-touch</option></select></div>
      <div className="chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={topCampaigns} margin={{top:10,right:8,left:0,bottom:35}}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#28364b"/><XAxis dataKey="shortName" tick={{fill:"#8996aa",fontSize:11}} axisLine={false} tickLine={false} angle={-25} textAnchor="end"/><YAxis tick={{fill:"#8996aa",fontSize:11}} axisLine={false} tickLine={false} tickFormatter={v=>"₹"+Math.round(v/1000)+"k"}/><Tooltip contentStyle={{background:"#111e32",border:"1px solid #34445d",borderRadius:10}} formatter={(v:any)=>money(Number(v))}/><Bar dataKey="attributed_revenue" name="Attributed revenue" radius={[5,5,0,0]} fill="#51d8c4"/></BarChart></ResponsiveContainer></div>
     </div>
     <div className="panel"><div className="panel-head"><div><div className="eyebrow">MODEL COMPARISON</div><h3>Attribution logic</h3></div><span className="mini-badge">3 MODELS</span></div>
