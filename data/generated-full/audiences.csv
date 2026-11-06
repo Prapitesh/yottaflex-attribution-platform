@@ -1,0 +1,5 @@
+id,name,segment_rule
+AUD-001,SMB,Synthetic segment: SMB
+AUD-002,MID_MARKET,Synthetic segment: MID_MARKET
+AUD-003,ENTERPRISE,Synthetic segment: ENTERPRISE
+AUD-004,STARTUP,Synthetic segment: STARTUP

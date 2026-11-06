@@ -1,0 +1,73 @@
+{
+  "seed": 20261022,
+  "counts": {
+    "channels.csv": 6,
+    "audiences.csv": 4,
+    "campaigns.csv": 500,
+    "creatives.csv": 500,
+    "contacts.csv": 50000,
+    "touchpoints.csv": 200001,
+    "web_sessions.csv": 10001,
+    "leads.csv": 10000,
+    "opportunities.csv": 10000,
+    "orders.csv": 10001,
+    "cost_records.csv": 499,
+    "ground_truth.csv": 5
+  },
+  "files": {
+    "channels.csv": {
+      "rows": 6,
+      "sha256": "9fa49610432f2f79e8b340f3f3887de4e0cbc46d6e2c01298650469634623961"
+    },
+    "audiences.csv": {
+      "rows": 4,
+      "sha256": "b28fcb5831a4a33a34a92be0a742cf6ab700fc9543186c9bcbb07270ad46451a"
+    },
+    "campaigns.csv": {
+      "rows": 500,
+      "sha256": "861a50c7f27b9a2fa08040990e5ae632f7afd4a8f8279c0433e4c04766995766"
+    },
+    "creatives.csv": {
+      "rows": 500,
+      "sha256": "6c801a1ef36e9636dae3d42cb35ac965f6f72a2f8423a78d35776f0373457026"
+    },
+    "contacts.csv": {
+      "rows": 50000,
+      "sha256": "1b929157dc31be1ed7b0c2053f26bd4c0835dd463293b5b61f92e0546779118c"
+    },
+    "touchpoints.csv": {
+      "rows": 200001,
+      "sha256": "f430fa75cd97c66132dc10561331c2676848b8f90b4b1d5bf5f9d509a45f3c40"
+    },
+    "web_sessions.csv": {
+      "rows": 10001,
+      "sha256": "fe7f59868f04498739429b4a834ab481acaf4a0ab9efd0522f85ae20ee98e0ac"
+    },
+    "leads.csv": {
+      "rows": 10000,
+      "sha256": "93c668af8bb33222734143c6d06e39639adf2217799e18735d5dc8941ede6dd7"
+    },
+    "opportunities.csv": {
+      "rows": 10000,
+      "sha256": "22ea1f655d308598591a7be707e365d8f7546ccd217412c6dcdee475d23bd3c3"
+    },
+    "orders.csv": {
+      "rows": 10001,
+      "sha256": "d2a6bf512c98a1da4da52b04297470ecdf6b5680f1075015d9b7aa56788f24ea"
+    },
+    "cost_records.csv": {
+      "rows": 499,
+      "sha256": "95cd32b8fa2791c38f397fb6980e1f59620371fcd373c40b37857efc94126841"
+    },
+    "ground_truth.csv": {
+      "rows": 5,
+      "sha256": "b5d2c9c79e4c74a25f0e075987054f755b2b72ccfe190ebb20a43e2878f4ddcc"
+    }
+  },
+  "evaluation_split": {
+    "train_end": "2025-09-30",
+    "validation_end": "2025-11-30",
+    "test_start": "2025-12-01",
+    "basis": "Chronological event and conversion timestamps; ground_truth excluded from input features."
+  }
+}

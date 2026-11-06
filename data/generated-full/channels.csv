@@ -1,0 +1,7 @@
+id,name,channel_type
+CH-001,Paid Search,PAID
+CH-002,Paid Social,SOCIAL
+CH-003,Email,EMAIL
+CH-004,Organic Search,ORGANIC
+CH-005,Partner Referral,REFERRAL
+CH-006,Field Event,OFFLINE
