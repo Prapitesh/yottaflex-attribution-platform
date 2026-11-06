@@ -15,7 +15,8 @@ Use TypeScript for all UI code, explicit prop interfaces for reusable components
 Base package: `ai.yottaflex.attribution`.
 
 - `config`: framework and application configuration.
-- `controller`: HTTP routing, request binding and response delegation.
+- `controller`: HTTP routing, request binding and response delegation; keep exception handling out of this package.
+- `exception`: centralized API exception handling (`@RestControllerAdvice`) and, as needed, application-specific exception types. Keep consistent error response mapping here.
 - `dto`: validated request/response contracts; do not expose persistence entities as API contracts.
 - `entity`: JPA persistence mappings only.
 - `repository`: Spring Data persistence access.

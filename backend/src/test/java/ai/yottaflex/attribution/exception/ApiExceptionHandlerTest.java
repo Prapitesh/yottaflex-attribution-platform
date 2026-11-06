@@ -1,4 +1,4 @@
-package ai.yottaflex.attribution.controller;
+package ai.yottaflex.attribution.exception;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -24,3 +24,4 @@ class ApiExceptionHandlerTest {
         assertEquals("MALFORMED_JSON",response.getBody().get("code"));
     }
 }
+

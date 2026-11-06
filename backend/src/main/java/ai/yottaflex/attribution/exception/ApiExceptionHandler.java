@@ -1,4 +1,4 @@
-package ai.yottaflex.attribution.controller;
+package ai.yottaflex.attribution.exception;
 
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -59,3 +59,4 @@ public class ApiExceptionHandler {
         return ResponseEntity.status(status).body(body);
     }
 }
+
